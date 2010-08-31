@@ -125,7 +125,6 @@ class Client(irc.IRCClient):
         else:
             log.msg('GOOD %r' % (masks,))
 
-    @defer.inlineCallbacks
     def privmsg(self, user, channel, message):
         # We use access to our channel as access control.
         # Private messages are rejected.
@@ -143,48 +142,55 @@ class Client(irc.IRCClient):
             return
         command = args.pop(0)
 
-        if command == 'check':
-            if not args:
-                self.msg(self.factory.channel, 'check what?')
-                return
+        handler = getattr(self, 'cmd_' + command, None)
+        if handler is not None:
+            return handler(channel, args)
 
-            target = args.pop(0)
-            if not args:
-                args = ['default']
+    @defer.inlineCallbacks
+    def cmd_check(self, channel, args):
+        if not args:
+            self.msg(self.factory.channel, 'check what?')
+            return
 
-            def errhandler(fail):
-                self.msg(channel, 'failure: %s' % (fail.getErrorMessage(),))
+        target = args.pop(0)
+        if not args:
+            args = ['default']
 
-            kwargs = dict(scansets=args, errhandler=errhandler)
-            if isIPAddress(target):
-                kwargs['ip'] = target
+        def errhandler(fail):
+            self.msg(channel, 'failure: %s' % (fail.getErrorMessage(),))
+
+        kwargs = dict(scansets=args, errhandler=errhandler)
+        if isIPAddress(target):
+            kwargs['ip'] = target
+        else:
+            kwargs['host'] = target
+
+        try:
+            result = yield self.factory.scanner.scan(**kwargs)
+        except scanner.UnknownScanset, e:
+            self.msg(channel, 'unknown scanset %s' % (e.args[0],))
+        except DNSNameError:
+            self.msg(channel, '%s did not resolve' % (target,))
+        else:
+            if result is None:
+                self.msg(channel, '%s is clean' % (target,))
             else:
-                kwargs['host'] = target
+                self.msg(channel, '%s is bad: %s' % (target, result))
 
-            try:
-                result = yield self.factory.scanner.scan(**kwargs)
-            except scanner.UnknownScanset, e:
-                self.msg(channel, 'unknown scanset %s' % (e.args[0],))
-            except DNSNameError:
-                self.msg(channel, '%s did not resolve' % (target,))
+    def cmd_stats(self, channel, args):
+        for name, semaphore in sorted(
+            self.factory.scanner.pools.iteritems()):
+            if semaphore.tokens:
+                self.msg(channel, '%s: %s free' % (
+                        name, semaphore.tokens))
             else:
-                if result is None:
-                    self.msg(channel, '%s is clean' % (target,))
-                else:
-                    self.msg(channel, '%s is bad: %s' % (target, result))
-        elif command == 'stats':
-            for name, semaphore in sorted(
-                self.factory.scanner.pools.iteritems()):
-                if semaphore.tokens:
-                    self.msg(channel, '%s: %s free' % (
-                            name, semaphore.tokens))
-                else:
-                    self.msg(channel, '%s: %s queued' % (
-                            name, len(semaphore.waiting)))
-            self.msg(channel, '%s checks in progress' % (
-                    len(self.factory.scanner.scans),))
-        elif command == 'help':
-            self.msg(channel, 'commands: check stats help')
+                self.msg(channel, '%s: %s queued' % (
+                        name, len(semaphore.waiting)))
+        self.msg(channel, '%s checks in progress' % (
+                len(self.factory.scanner.scans),))
+
+    def cmd_help(self, channel, args):
+        self.msg(channel, 'commands: check stats help')
 
 
 class Factory(protocol.ReconnectingClientFactory):
