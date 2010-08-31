@@ -83,6 +83,25 @@ class ScanTest(unittest.TestCase):
         check_d.callback('bad')
         self.assertEqual('bad', d.result)
 
+    def testASyncBadAndCancel(self):
+        check_d = defer.Deferred()
+        def bad(scan):
+            return check_d
+
+        check_d2 = defer.Deferred()
+        def bad2(scan):
+            return check_d2
+
+        self.scan.addCheck(bad, self.onepool, 1)
+        self.scan.addCheck(bad2, self.hugepool, 1)
+        d = self.scan.getResult()
+        self.scan.start()
+        self.failIf(d.called)
+        check_d.callback('bad')
+        self.assertEqual('bad', d.result)
+        self.failUnless(check_d2.called)
+        self.assertIdentical(None, check_d2.result)
+
     def testSyncFailure(self):
         def fail(scan):
             raise TestError()

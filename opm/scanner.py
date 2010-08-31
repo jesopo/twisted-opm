@@ -106,13 +106,14 @@ class Scan(object):
 
         def checked(result):
             if result is not None:
-                # We found something. Stop all other checks:
+                # We found something:
+                self._setResult(result)
+
+                # Stop all other checks:
                 running = self.running.values()
                 for d in running:
                     d.cancel()
                 assert not self.running
-
-                self._setResult(result)
 
         def failed(fail):
             fail.trap(defer.CancelledError)
