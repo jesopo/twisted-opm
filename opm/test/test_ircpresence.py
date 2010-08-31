@@ -225,3 +225,16 @@ class ClientTest(unittest.TestCase):
         self.assertReceived('')
         self.scanner.d.callback('naughty')
         self.assertReceived('PRIVMSG #achannel :host is bad: naughty\r\n')
+
+    def testThrottle(self):
+        self.initialize(away='away', opername='name', operpass='pass')
+        self.proto.messageBurst = 4
+        self.assertReceived('NICK anick\r\n'
+                            'USER anick foo bar :txOPM\r\n')
+        self.proto.dataReceived(':ser.ver 001 anick :Welcome\r\n')
+        self.assertReceived('OPER name pass\r\n')
+        self.clock.advance(2)
+        self.assertReceived('AWAY :away\r\n')
+        self.failUnless(self.clock.getDelayedCalls())
+        self.proto.connectionLost(None)
+        self.failIf(self.clock.getDelayedCalls())

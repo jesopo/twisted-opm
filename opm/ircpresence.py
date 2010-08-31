@@ -51,7 +51,7 @@ class Client(irc.IRCClient):
         if self.messageTimer < now:
             self.messageTimer = now
 
-        while self._queue and self.messageTimer < now + self.messageBurst:
+        while self._queue and self.messageTimer <= now + self.messageBurst:
             self._reallySendLine(self._queue.pop(0))
             self.messageTimer += self.messagePenalty
 
@@ -82,6 +82,9 @@ class Client(irc.IRCClient):
 
     def connectionLost(self, reason):
         self.factory.bot = None
+        if self._queueEmptying is not None:
+            self._queueEmptying.cancel()
+            self._queueEmptying = None
         return irc.IRCClient.connectionLost(self, reason)
 
     @defer.inlineCallbacks
