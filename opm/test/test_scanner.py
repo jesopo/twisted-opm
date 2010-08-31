@@ -212,9 +212,9 @@ class ScannerTest(unittest.TestCase):
 
         self.scansets['default'] = [(1, 'onepool', check)]
 
-        d = self.scanner.scan(ip='127.0.0.1', scansets=['default'])
-        d2 = self.scanner.scan(ip='127.0.0.1', scansets=['default'],
-                               errhandler=failures.append)
+        self.scanner.scan(ip='127.0.0.1', scansets=['default'])
+        self.scanner.scan(ip='127.0.0.1', scansets=['default'],
+                          errhandler=failures.append)
 
         # HACK: remove standard error logging
         self.scanner.scans['127.0.0.1'].errhandlers.remove(log.err)
