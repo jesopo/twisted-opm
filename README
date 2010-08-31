@@ -1,0 +1,47 @@
+
+This is a Twisted-based BOPM-like open proxy scanner.
+
+It is currently in a very early stage of development. Many features
+are still missing, and the ones that are there probably have bugs. I
+strongly recommend against taking any automated action based on
+results from this scanner, but would love to hear how its results
+compare to (say) BOPM, and how it performs.
+
+Dependencies:
+
+- Python 2.5 or newer
+- Twisted 10.1 (!) or newer
+- pyyaml
+
+TODO:
+
+Lots of things need further thought. Here are just some:
+
+- More tests.
+
+- Config rehashing. Currently every change needs a restart.
+
+- More flexible setup of what to do when a check matches. Currently
+  the action taken does not actually depend on which scan hit. There
+  is actually a bug lurking here: if someone manually invokes a scan
+  on a certain IP while it has automatic scans pending (with different
+  scansets) then any matching check will fire *both* checks.
+  So triggering an innocuous scanset manually at the wrong time can
+  cause incorrect klines.
+
+  I suspect it makes sense to set up observers separately, and bind
+  any number of observers to a scanset. Observers could do things like
+  set klines, report to a dnsbl over xmlrpc, etc. They would all fire
+  if any check in the scanset matches something, independently of
+  how the check was triggered.
+
+- More checks. This needs users reporting exploitable proxies and the like,
+  preferably in the form of traffic logs.
+
+- More interesting remote endpoint. If the remote endpoint is another
+  process we have a two-way link to we can do things like send unique
+  cookies through a proxy and use them to match things up, improving
+  reliability. Far from critical though.
+
+- The target_* things should probably be per scanset.
+  Or (for convenience) be defined separately and referenced from scansets.
