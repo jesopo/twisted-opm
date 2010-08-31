@@ -212,3 +212,30 @@ class SOCKS5Protocol(LineProtocol):
 class SOCKS5Checker(ProxyChecker):
     protocol = SOCKS5Protocol
     message = 'SOCKS 5'
+
+
+# This poorly-named check catches some Mikrotik routers running an
+# open proxy.
+
+# These seem to need some data (blank line works) from us after they
+# have sent us a HTTP/1.0 200 OK response. Just sending more lines
+# before then does not trigger the actual payload reply, we need to
+# wait.
+# Currently we just wait for any 2 lines, then send 2 of our own.
+
+class MikrotikProtocol(HTTPConnectProtocol):
+
+    def connectionMade(self):
+        HTTPConnectProtocol.connectionMade(self)
+        self.lineCountReceived = 0
+
+    def lineReceived(self, line):
+        HTTPConnectProtocol.lineReceived(self, line)
+        self.lineCountReceived += 1
+        if self.lineCountReceived == 2:
+            self.sendLines(['', ''])
+
+
+class MikrotikChecker(ProxyChecker):
+    protocol = MikrotikProtocol
+    message = 'HTTP CONNECT (Mikrotik-style)'

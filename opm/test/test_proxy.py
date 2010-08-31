@@ -218,3 +218,18 @@ class SimpleProtocolTest(unittest.TestCase):
                         '\x05\x01\x00'
                         '\x05\x01\x00\x01\x01\x02\x03\x04\x00\x08')
 
+    @defer.inlineCallbacks
+    def testMikrotik(self):
+        proto = proxy.MikrotikProtocol(self.env, 'a message')
+        proto.transport = proto_helpers.StringTransport()
+        proto.connectionMade()
+        self.assertEqual('CONNECT 1.2.3.4:8 HTTP/1.0\r\n\r\n',
+                         proto.transport.value())
+        proto.transport.clear()
+        proto.dataReceived('HTTP/1.0 200 OK\r\n\r\n')
+        self.assertEqual('\r\n\r\n', proto.transport.value())
+
+        d = proto.deferred
+        proto.dataReceived('killme\n')
+        result = yield d
+        self.assertEqual('a message', result)
