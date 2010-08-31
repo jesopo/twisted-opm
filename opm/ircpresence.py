@@ -28,10 +28,13 @@ class Client(irc.IRCClient):
     messagePenalty = 2 # seconds
     messageBurst = 10 # seconds
 
+    # Defaults to None which kind of sucks.
+    realname = 'txOPM'
+
     def connectionMade(self):
         self.nickname = self.factory.nickname
         self.password = self.factory.password
-        if self.clock is None:
+        if self.clock is None: # pragma: no cover
             from twisted.internet import reactor
             self.clock = reactor
         self.messageTimer = 0
@@ -170,7 +173,8 @@ class Client(irc.IRCClient):
                 else:
                     self.msg(channel, '%s is bad: %s' % (target, result))
         elif command == 'stats':
-            for name, semaphore in self.factory.scanner.pools.iteritems():
+            for name, semaphore in sorted(
+                self.factory.scanner.pools.iteritems()):
                 if semaphore.tokens:
                     self.msg(channel, '%s: %s free' % (
                             name, semaphore.tokens))
@@ -188,8 +192,9 @@ class Factory(protocol.ReconnectingClientFactory):
     protocol = Client
 
     # XXX did I mention this is ad-hoc and terrible yet?
-    def __init__(self, nickname, channel, password, opername, operpass,
-                 away, opermode, connregex, scanner, masks, klinetemplate):
+    def __init__(self, nickname, channel, scanner, masks,
+                 password=None, opername=None, operpass=None, away=None,
+                 opermode=None, connregex=None, klinetemplate=None):
         self.bot = None
         self.nickname = nickname
         self.channel = channel
@@ -204,8 +209,3 @@ class Factory(protocol.ReconnectingClientFactory):
             (mask, re.compile(fnmatch.translate(mask)), scansets)
             for mask, scansets in masks.iteritems()]
         self.klinetemplate = klinetemplate
-
-    def log(self, eventDict):
-        if self.bot is not None and eventDict.get('irc'):
-            text = log.textFromEventDict(eventDict)
-            self.bot.notice(self.channel, text)
