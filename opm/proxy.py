@@ -99,6 +99,7 @@ class LineProtocol(basic.LineOnlyReceiver):
 
         if self.bytesReceived > self.max_bytes:
             self.transport.loseConnection()
+            self.connectionLost(None)
 
     def connectionLost(self, reason):
         if self.deferred is not None:
@@ -138,7 +139,7 @@ class HTTPPostChecker(ProxyChecker):
 class HTTPGetProtocol(LineProtocol):
     def connectionMade(self):
         LineProtocol.connectionMade(self)
-        self.sendLines(['GET %s HTTP/1.0', ''])
+        self.sendLines(['GET %s HTTP/1.0' % (self.target_url,), ''])
 
 class HTTPGetChecker(ProxyChecker):
     protocol = HTTPGetProtocol
