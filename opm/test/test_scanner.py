@@ -155,7 +155,7 @@ class ScannerTest(unittest.TestCase):
             self.clock, self.resolver, self.pools, self.scansets, {})
 
     def testApiSanity(self):
-        self.assertFailure(self.scanner.scan(), TypeError)
+        return self.assertFailure(self.scanner.scan(), TypeError)
 
     def testEnvironment(self):
         def checkEnvironment(scan, env):
@@ -170,7 +170,7 @@ class ScannerTest(unittest.TestCase):
 
     def testResolveFailure(self):
         self.scansets['default'] = [(1, 'onepool', sync_bad)]
-        self.assertFailure(
+        return self.assertFailure(
             self.scanner.scan(host='notthehost', scansets=['default']),
             DNSNameError)
 
@@ -223,5 +223,6 @@ class ScannerTest(unittest.TestCase):
         self.assertEqual(1, len(failures))
 
     def testUnknownScanset(self):
-        self.assertFailure(self.scanner.scan(ip='127.0.0.1', scansets=['no']),
-                           scanner.UnknownScanset)
+        return self.assertFailure(
+            self.scanner.scan(ip='127.0.0.1', scansets=['no']),
+            scanner.UnknownScanset)
