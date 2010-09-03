@@ -35,6 +35,7 @@ def _createEnv(reactor):
     env.target_url = 'http://localhost/cookie'
     env.target_strings = ['killme']
     env.max_bytes = 1024
+    env.bind_address = None
     return env
 
 
@@ -55,6 +56,13 @@ class ProxyCheckerTest(unittest.TestCase):
         self.assertEqual(5, port)
         self.assertIdentical(None, timeout)
         self.assertIdentical(None, bindAddress)
+
+    def testBindAddress(self):
+        self.env.bind_address = '192.168.1.2'
+        self.checker.check(self.scan, self.env)
+        self.assertEqual(1, len(self.reactor.tcpClients))
+        host, port, factory, timeout, bindAddress = self.reactor.tcpClients[0]
+        self.assertEqual(('192.168.1.2', 0), bindAddress)
 
     def testConnectFailed(self):
         d = self.checker.check(self.scan, self.env)

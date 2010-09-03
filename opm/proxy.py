@@ -27,7 +27,12 @@ class ProxyChecker(object):
             env, '%s (%d)' % (self.message, self.port))
         # Disable the timeout here because our calling scanner should
         # cancel us just fine without it:
-        d = creator.connectTCP(scan.ip, self.port, timeout=None)
+        if env.bind_address:
+            bindAddress = (env.bind_address, 0)
+        else:
+            bindAddress = None
+        d = creator.connectTCP(scan.ip, self.port, timeout=None,
+                               bindAddress=bindAddress)
         def connected(proto):
             return proto.deferred
         def connectFailed(fail):

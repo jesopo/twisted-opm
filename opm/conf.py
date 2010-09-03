@@ -91,7 +91,7 @@ def makeService(options):
     # make this less global in the future anyway, so laaaaaaaaater
     env = {}
     for k in ['target_ip', 'target_port', 'target_url', 'target_strings',
-              'max_bytes']:
+              'max_bytes', 'bind_address']:
         env[k] = options['conf'].get(k)
 
     theScanner = scanner.Scanner(
