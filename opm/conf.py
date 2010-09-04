@@ -39,7 +39,7 @@ class Options(usage.Options):
         try:
             with open(conffile, 'rb') as f:
                 self['conf'] = yaml.load(f)
-        except EnvironmentError as e:
+        except EnvironmentError, e:
             raise usage.error('Cannot open %s: %s' % (conffile, e))
 
     def postOptions(self):
