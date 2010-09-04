@@ -62,3 +62,33 @@ class TorTestByIP(unittest.TestCase):
         checker = dns.TorChecker('notthehost', 42)
         result = yield checker.check(self.scan, self.env)
         self.assertIdentical(None, result)
+
+
+class DNSBLTest(unittest.TestCase):
+
+    def setUp(self):
+        self.resolver = MockResolver({
+                '8.7.6.5.dnsbl.it': '127.0.0.4',
+                })
+        self.env = scanner.ScanEnvironment(reactor=None,
+                                           resolver=self.resolver)
+        self.scan = MockScan('5.6.7.8')
+        self.scan2 = MockScan('1.2.3.4')
+
+    @defer.inlineCallbacks
+    def testBadIPKnownReason(self):
+        checker = dns.DNSBLChecker('dnsbl.it', {4: 'Naughty'})
+        result = yield checker.check(self.scan, self.env)
+        self.assertEqual('Naughty', result)
+
+    @defer.inlineCallbacks
+    def testBadIPUnknownReason(self):
+        checker = dns.DNSBLChecker('dnsbl.it', {})
+        result = yield checker.check(self.scan, self.env)
+        self.assertEqual('Unknown reason 4', result)
+
+    @defer.inlineCallbacks
+    def testGoodIP(self):
+        checker = dns.DNSBLChecker('dnsbl.it', {})
+        result = yield checker.check(self.scan2, self.env)
+        self.assertIdentical(None, result)

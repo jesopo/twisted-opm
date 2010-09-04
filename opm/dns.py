@@ -42,3 +42,26 @@ class TorChecker(object):
         else:
             defer.returnValue('tor exit node (%s:%s)' %
                               (self.host, self.port))
+
+
+class DNSBLChecker(object):
+
+    def __init__(self, dnsbl, reasons):
+        self.dnsbl = dnsbl
+        self.reasons = reasons
+
+    @defer.inlineCallbacks
+    def check(self, scan, env):
+        query = '.'.join(list(reversed(scan.ip.split('.'))) + [self.dnsbl])
+        try:
+            result = yield util.getV4HostByName(env.resolver, query)
+        except DNSNameError:
+            # XXX util.getV4HostByName should probably catch this instead.
+            result = None
+
+        if result is None:
+            defer.returnValue(None)
+
+        reason = int(result.rsplit('.', 1)[1])
+        defer.returnValue(self.reasons.get(reason,
+                                           'Unknown reason %d' % (reason,)))
