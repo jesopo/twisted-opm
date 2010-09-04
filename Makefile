@@ -2,13 +2,14 @@
 # This Makefile only exists to aid me in developing.
 # It is not very useful to anyone else at this point.
 
+python := $(shell which python)
 
 with_coverage := \
   --with-coverage --cover-package=opm --cover-erase --cover-tests
 
-nose := nosetests
-trial := trial
-pyflakes := pyflakes
+nose := $(python) $(shell which nosetests)
+trial := $(python) $(shell which trial)
+pyflakes := $(python) $(shell which pyflakes)
 
 .PHONY: check check-all check-coverage check-pyflakes
 
