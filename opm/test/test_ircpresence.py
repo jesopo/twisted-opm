@@ -129,7 +129,9 @@ class ClientTest(unittest.TestCase):
         self.assertReceived('')
 
         self.scanner.d.callback('naughty')
-        self.assertReceived('KILL it with fire\r\n')
+        self.assertReceived(
+            'KILL it with fire\r\n'
+            'PRIVMSG #achannel :BAD: nick!user@host (naughty)\r\n')
 
     def testOffChannelPrivmsg(self):
         self.initialize()

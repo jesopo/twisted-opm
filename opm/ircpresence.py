@@ -130,9 +130,12 @@ class Client(irc.IRCClient):
                                                  host=d.get('host'),
                                                  scansets=scansets)
         if result is not None:
+            d['reason'] = result
             if self.factory.klinetemplate is not None:
-                d['reason'] = result
                 self.sendLine(self.factory.klinetemplate % d)
+            self.msg(
+                self.factory.channel, 'BAD: %s!%s@%s (%s)' % (
+                    d['nick'], d['user'], d.get('host', d['ip']), result))
             log.msg('KILL %r for %s' % (masks, result))
         else:
             log.msg('GOOD %r' % (masks,))
