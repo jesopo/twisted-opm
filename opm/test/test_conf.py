@@ -44,7 +44,7 @@ class OptionsTest(unittest.TestCase):
 
 def _makeService(**kwargs):
     return conf.makeService({'force-select': True, 'keep-resolver': True,
-                             'conf': kwargs})
+                             'irc-log': False, 'conf': kwargs})
 
 class ServiceTest(unittest.TestCase):
 

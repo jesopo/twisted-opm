@@ -33,6 +33,7 @@ class Options(usage.Options):
         ('force-select', None, 'Accept the selectreactor.'),
         ('keep-resolver', None, 'Keep the default resolver.'),
         ('force-limits', None, 'Bypass resource limit checks.'),
+        ('irc-log', None, 'Log all irc traffic'),
         ]
 
     def parseArgs(self, conffile):
@@ -111,6 +112,7 @@ def makeService(options):
             scanner=theScanner,
             masks=options['conf'].get('masks', {}),
             klinetemplate=net.get('klinetemplate'),
+            verbose=options['irc-log'],
             )
         serv = internet.TCPClient(net['host'], net['port'], factory)
         serv.setName(name)

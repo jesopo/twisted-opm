@@ -42,9 +42,16 @@ class Client(irc.IRCClient):
 
     def sendLine(self, line):
         # Overridden to do rfc1459-style rate limiting.
+        if self.factory.verbose:
+            log.msg('IRC OUT %r' % (line,))
         self._queue.append(line)
         if not self._queueEmptying:
             self._sendLines()
+
+    def lineReceived(self, line):
+        if self.factory.verbose:
+            log.msg('IRC IN  %r' % (line,))
+        irc.IRCClient.lineReceived(self, line)
 
     def _sendLines(self):
         now = self.clock.seconds()
@@ -203,7 +210,8 @@ class Factory(protocol.ReconnectingClientFactory):
     # XXX did I mention this is ad-hoc and terrible yet?
     def __init__(self, nickname, channel, scanner, masks,
                  password=None, opername=None, operpass=None, away=None,
-                 opermode=None, connregex=None, klinetemplate=None):
+                 opermode=None, connregex=None, klinetemplate=None,
+                 verbose=False):
         self.bot = None
         self.nickname = nickname
         self.channel = channel
@@ -218,3 +226,4 @@ class Factory(protocol.ReconnectingClientFactory):
             (mask, re.compile(fnmatch.translate(mask)), scansets)
             for mask, scansets in masks.iteritems()]
         self.klinetemplate = klinetemplate
+        self.verbose = verbose
