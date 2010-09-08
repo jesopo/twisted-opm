@@ -72,6 +72,8 @@ class Client(irc.IRCClient):
         self.sendLine('OPER %s %s' % (name, password))
 
     def signedOn(self):
+        for target, msg in self.factory.onconnectmsgs:
+            self.msg(target, msg)
         if self.factory.opername and self.factory.operpass:
             self.oper(self.factory.opername, self.factory.operpass)
         if self.factory.away:
@@ -211,7 +213,7 @@ class Factory(protocol.ReconnectingClientFactory):
     def __init__(self, nickname, channel, scanner, masks,
                  password=None, opername=None, operpass=None, away=None,
                  opermode=None, connregex=None, klinetemplate=None,
-                 verbose=False):
+                 onconnectmsgs=(), verbose=False):
         self.bot = None
         self.nickname = nickname
         self.channel = channel
@@ -226,4 +228,5 @@ class Factory(protocol.ReconnectingClientFactory):
             (mask, re.compile(fnmatch.translate(mask)), scansets)
             for mask, scansets in masks.iteritems()]
         self.klinetemplate = klinetemplate
+        self.onconnectmsgs = onconnectmsgs
         self.verbose = verbose

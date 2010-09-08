@@ -66,13 +66,14 @@ class ClientTest(unittest.TestCase):
 
     def testConnect(self):
         self.initialize(opername='oname', operpass='opass', away='very far',
-                        opermode='+g')
+                        opermode='+g', onconnectmsgs=[['nickserv', 'yo yo']])
         self.assertReceived('NICK anick\r\n'
                             'USER anick foo bar :txOPM\r\n')
         self.assertIdentical(None, self.factory.bot)
         self.proto.dataReceived(
             ':ser.ver 001 anick :Welcome to the network\r\n')
-        self.assertReceived('OPER oname opass\r\n'
+        self.assertReceived('PRIVMSG nickserv :yo yo\r\n'
+                            'OPER oname opass\r\n'
                             'AWAY :very far\r\n'
                             'JOIN #achannel\r\n')
         self.assertIdentical(self.proto, self.factory.bot)

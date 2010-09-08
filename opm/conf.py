@@ -112,6 +112,7 @@ def makeService(options):
             scanner=theScanner,
             masks=options['conf'].get('masks', {}),
             klinetemplate=net.get('klinetemplate'),
+            onconnectmsgs=net.get('onconnectmsgs', ()),
             verbose=options['irc-log'],
             )
         serv = internet.TCPClient(net['host'], net['port'], factory)
