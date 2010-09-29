@@ -114,6 +114,7 @@ def makeService(options):
             klinetemplate=net.get('klinetemplate'),
             onconnectmsgs=net.get('onconnectmsgs', ()),
             verbose=options['irc-log'],
+            flood_exempt=net.get('flood-exempt', False),
             )
         serv = internet.TCPClient(net['host'], net['port'], factory)
         serv.setName(name)

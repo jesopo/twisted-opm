@@ -241,3 +241,11 @@ class ClientTest(unittest.TestCase):
         self.failUnless(self.clock.getDelayedCalls())
         self.proto.connectionLost(None)
         self.failIf(self.clock.getDelayedCalls())
+
+    def testFloodExempt(self):
+        self.initialize(flood_exempt=True)
+        self.assertEqual(2, self.proto.messagePenalty)
+        self.connectIRC()
+        self.assertEqual(2, self.proto.messagePenalty)
+        self.proto.dataReceived(':ser.ver 381 anick :Now you are an oper\r\n')
+        self.assertEqual(0, self.proto.messagePenalty)

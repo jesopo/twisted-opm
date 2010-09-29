@@ -89,6 +89,9 @@ class Client(irc.IRCClient):
             self.sendLine(
                 'MODE %s %s' % (self.nickname, self.factory.opermode))
 
+        if self.factory.flood_exempt:
+            self.messagePenalty = 0
+
     def connectionLost(self, reason):
         self.factory.bot = None
         if self._queueEmptying is not None:
@@ -216,7 +219,7 @@ class Factory(protocol.ReconnectingClientFactory):
     def __init__(self, nickname, channel, scanner, masks,
                  password=None, opername=None, operpass=None, away=None,
                  opermode=None, connregex=None, klinetemplate=None,
-                 onconnectmsgs=(), verbose=False):
+                 onconnectmsgs=(), verbose=False, flood_exempt=False):
         self.bot = None
         self.nickname = nickname
         self.channel = channel
@@ -233,3 +236,4 @@ class Factory(protocol.ReconnectingClientFactory):
         self.klinetemplate = klinetemplate
         self.onconnectmsgs = onconnectmsgs
         self.verbose = verbose
+        self.flood_exempt = flood_exempt
