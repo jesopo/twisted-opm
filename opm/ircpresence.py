@@ -117,6 +117,11 @@ class Client(irc.IRCClient):
 
         masks = set()
         if 'ip' in d:
+            # Sanity check to weed out non-ips without needing to do
+            # it in the regexp (assuming these are something we cannot
+            # scan).
+            if not isIPAddress(d['ip']):
+                return
             masks.add('%s!%s@%s' % (d['nick'], d['user'], d['ip']))
         if 'host' in d:
             masks.add('%s!%s@%s' % (d['nick'], d['user'], d['host']))

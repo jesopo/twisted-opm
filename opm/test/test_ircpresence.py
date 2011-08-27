@@ -109,6 +109,14 @@ class ClientTest(unittest.TestCase):
         self.proto.dataReceived(':ser.ver NOTICE * :blah\r\n')
         self.assertReceived('')
 
+    def testMatchingServerNoticeNoIP(self):
+        self.initializeForNotice()
+        self.proto.dataReceived(
+            ':ser.ver NOTICE * :-- nick (user@host) [0]\r\n')
+        self.assertReceived('')
+
+        self.failIf(hasattr(self.scanner, 'ip'))
+
     def testMatchingServerNoticeGood(self):
         self.initializeForNotice()
         self.proto.dataReceived(
