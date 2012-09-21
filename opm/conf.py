@@ -14,6 +14,7 @@ except ImportError: # pragma: no cover
 
 from twisted.python import usage
 from twisted.application import service, internet
+from twisted.internet import ssl
 
 import yaml
 
@@ -116,7 +117,11 @@ def makeService(options):
             verbose=options['irc-log'],
             flood_exempt=net.get('flood_exempt', False),
             )
-        serv = internet.TCPClient(net['host'], net['port'], factory)
+        if net.get('ssl', False):
+            ctxf = ssl.ClientContextFactory()
+            serv = internet.SSLClient(net['host'], net['port'], factory, ctxf)
+        else:
+            serv = internet.TCPClient(net['host'], net['port'], factory)
         serv.setName(name)
         serv.setServiceParent(m)
 
