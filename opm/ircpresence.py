@@ -33,6 +33,7 @@ class Client(irc.IRCClient):
 
     def connectionMade(self):
         self.nickname = self.factory.nickname
+        self.username = self.factory.username
         self.password = self.factory.password
         if self.clock is None: # pragma: no cover
             from twisted.internet import reactor
@@ -224,9 +225,11 @@ class Factory(protocol.ReconnectingClientFactory):
     def __init__(self, nickname, channel, scanner, masks,
                  password=None, opername=None, operpass=None, away=None,
                  opermode=None, connregex=None, klinetemplate=None,
-                 onconnectmsgs=(), verbose=False, flood_exempt=False):
+                 onconnectmsgs=(), verbose=False, flood_exempt=False,
+                 username=None):
         self.bot = None
         self.nickname = nickname
+        self.username = username
         self.channel = channel
         self.password = password
         self.opername = opername

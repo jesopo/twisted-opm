@@ -116,6 +116,7 @@ def makeService(options):
             onconnectmsgs=net.get('onconnectmsgs', ()),
             verbose=options['irc-log'],
             flood_exempt=net.get('flood_exempt', False),
+            username=net.get('username'),
             )
         if net.get('ssl', False):
             ctxf = ssl.ClientContextFactory()
