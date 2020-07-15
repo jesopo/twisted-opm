@@ -191,7 +191,7 @@ class Client(irc.IRCClient):
 
         try:
             result = yield self.factory.scanner.scan(**kwargs)
-        except scanner.UnknownScanset, e:
+        except scanner.UnknownScanset as e:
             self.msg(channel, 'unknown scanset %s' % (e.args[0],))
         except DNSNameError:
             self.msg(channel, '%s did not resolve' % (target,))
@@ -203,7 +203,7 @@ class Client(irc.IRCClient):
 
     def cmd_stats(self, channel, args):
         for name, semaphore in sorted(
-            self.factory.scanner.pools.iteritems()):
+            self.factory.scanner.pools.items()):
             if semaphore.tokens:
                 self.msg(channel, '%s: %s free' % (
                         name, semaphore.tokens))
@@ -240,7 +240,7 @@ class Factory(protocol.ReconnectingClientFactory):
         self.scanner = scanner
         self.masks = [
             (mask, re.compile(fnmatch.translate(mask)), scansets)
-            for mask, scansets in masks.iteritems()]
+            for mask, scansets in masks.items()]
         self.klinetemplate = klinetemplate
         self.onconnectmsgs = onconnectmsgs
         self.verbose = verbose

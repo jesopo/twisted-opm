@@ -170,11 +170,11 @@ class Scanner(object):
         self.resolver = resolver
         self.env = ScanEnvironment(reactor, resolver)
         # XXX quick hack, refactor later.
-        for k, v in env.iteritems():
+        for k, v in env.items():
             setattr(self.env, k, v)
         self.scans = {}
         self.pools = dict((name, defer.DeferredSemaphore(n))
-                          for name, n in pools.iteritems())
+                          for name, n in pools.items())
         self.dnspool = self.pools.get(
             'dns', defer.DeferredSemaphore(default_dns_pool_size))
         self.scansets = scansets

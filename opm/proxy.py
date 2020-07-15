@@ -45,8 +45,8 @@ class ProxyChecker(object):
 
 class LineProtocol(basic.LineOnlyReceiver):
 
-    delimiter = '\n'
-    out_delimiter = '\r\n'
+    delimiter = b'\n'
+    out_delimiter = b'\r\n'
 
     def __init__(self, env, message):
         self.message = message
@@ -64,7 +64,7 @@ class LineProtocol(basic.LineOnlyReceiver):
     def sendLines(self, lines):
         out = []
         for line in lines:
-            out.extend([line, self.out_delimiter])
+            out.extend([line.encode("utf8"), self.out_delimiter])
         return self.transport.writeSequence(out)
 
     def connectionMade(self):
@@ -90,7 +90,7 @@ class LineProtocol(basic.LineOnlyReceiver):
             self.bytesReceived -= len(self._buffer)
 
     def lineReceived(self, line):
-        self.check(line)
+        self.check(line.decode("utf8"))
 
     def check(self, data):
         self.bytesReceived += len(self._buffer)

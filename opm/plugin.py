@@ -6,7 +6,7 @@
 
 from __future__ import absolute_import, with_statement, division
 
-from zope.interface import Interface, Attribute, implements
+from zope.interface import Interface, Attribute, implementer
 
 from twisted.python.reflect import namedAny
 from twisted import plugin
@@ -20,10 +20,8 @@ class ICheckerFactory(Interface):
 
     name = Attribute('name')
 
-
+@implementer(ICheckerFactory, plugin.IPlugin)
 class CheckerFactory(object):
-
-    implements(ICheckerFactory, plugin.IPlugin)
 
     def __init__(self, name, qname):
         self.name = name

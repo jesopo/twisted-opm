@@ -41,12 +41,12 @@ class Options(usage.Options):
         try:
             with open(conffile, 'rb') as f:
                 self['conf'] = yaml.load(f)
-        except EnvironmentError, e:
+        except EnvironmentError as e:
             raise usage.error('Cannot open %s: %s' % (conffile, e))
 
     def postOptions(self):
         if resource is not None and not self['force-limits']:
-            total_pool_size = sum(self['conf'].get('pools', {}).itervalues())
+            total_pool_size = sum(self['conf'].get('pools', {}).values())
             soft_limit, hard_limit = resource.getrlimit(
                 resource.RLIMIT_NOFILE)
             if soft_limit < total_pool_size:
@@ -68,11 +68,11 @@ def makeService(options):
     if not options['force-select']: # pragma: no cover
         from twisted.internet import selectreactor
         if isinstance(reactor, selectreactor.SelectReactor):
-            print 'The select reactor is probably a bad idea.'
-            print 'Please use a reactor with better support for lots of fds.'
-            print '(-r epoll for example)'
-            print 'You can bypass this check using --force-select'
-            print
+            print('The select reactor is probably a bad idea.')
+            print('Please use a reactor with better support for lots of fds.')
+            print('(-r epoll for example)')
+            print('You can bypass this check using --force-select')
+            print()
             raise ValueError('unfortunate reactor choice')
 
     m = service.MultiService()
@@ -80,7 +80,7 @@ def makeService(options):
     checkerFactories = plugin.getCheckerFactories()
 
     scansets = {}
-    for name, d in options['conf']['scansets'].iteritems():
+    for name, d in options['conf']['scansets'].items():
         scanset = []
         for args in d['protocols']:
             poolname = args.pop(0)
@@ -99,7 +99,7 @@ def makeService(options):
     theScanner = scanner.Scanner(
         reactor, resolver, options['conf']['pools'], scansets, env)
 
-    for name, net in options['conf'].get('irc', {}).iteritems():
+    for name, net in options['conf'].get('irc', {}).items():
         # XXX terrible, see also similar complaints in ircpresence.
         # Split this up later.
         factory = ircpresence.Factory(
