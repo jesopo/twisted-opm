@@ -3,8 +3,8 @@
 
 """DNS blacklist and similar checks."""
 
-
 from __future__ import absolute_import, with_statement, division
+from ipaddress  import ip_address
 
 from twisted.internet import defer
 from twisted.internet.abstract import isIPAddress
@@ -52,7 +52,15 @@ class DNSBLChecker(object):
 
     @defer.inlineCallbacks
     def check(self, scan, env):
-        query = '.'.join(list(reversed(scan.ip.split('.'))) + [self.dnsbl])
+        address_obj = ip_address(scan.ip)
+
+        if address_obj.version == 6:
+            address = reversed(address_obj.exploded.replace(":", ""))
+        else:
+            address = reversed(address.split("."))
+
+        query = '.'.join(list(address) + [self.dnsbl])
+
         try:
             result = yield util.getV4HostByName(env.resolver, query)
         except DNSNameError:
