@@ -14,7 +14,7 @@ import fnmatch
 
 from twisted.python import log
 from twisted.internet import protocol, defer
-from twisted.internet.abstract import isIPAddress
+from twisted.internet.abstract import isIPAddress, isIPv6Address
 from twisted.words.protocols import irc
 from twisted.names.error import DNSNameError
 
@@ -121,7 +121,7 @@ class Client(irc.IRCClient):
             # Sanity check to weed out non-ips without needing to do
             # it in the regexp (assuming these are something we cannot
             # scan).
-            if not isIPAddress(d['ip']):
+            if not isIPAddress(d['ip']) and not isIPv6Address(d['ip']):
                 return
             masks.add('%s!%s@%s' % (d['nick'], d['user'], d['ip']))
         if 'host' in d:
