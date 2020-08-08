@@ -40,7 +40,7 @@ class Options(usage.Options):
     def parseArgs(self, conffile):
         try:
             with open(conffile, 'rb') as f:
-                self['conf'] = yaml.load(f)
+                self['conf'] = yaml.safe_load(f)
         except EnvironmentError as e:
             raise usage.error('Cannot open %s: %s' % (conffile, e))
 
