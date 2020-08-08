@@ -10,6 +10,8 @@ from ..plugin import CheckerFactory
 tor = CheckerFactory('tor', 'opm.dns.TorChecker')
 dnsbl = CheckerFactory('dnsbl', 'opm.dns.DNSBLChecker')
 
+cert = CheckerFactory('cert', 'opm.cert.CertificateChecker')
+
 http_connect = CheckerFactory('http', 'opm.proxy.HTTPConnectChecker')
 http_post = CheckerFactory('http-post', 'opm.proxy.HTTPPostChecker')
 http_get = CheckerFactory('http-get', 'opm.proxy.HTTPGetChecker')
