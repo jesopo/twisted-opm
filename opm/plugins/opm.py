@@ -8,6 +8,7 @@ from ..plugin import CheckerFactory
 
 
 dnsbl = CheckerFactory('dnsbl', 'opm.dns.DNSBLChecker')
+dns = CheckerFactory('rdns', 'opm.dns.rDNSChecker')
 
 cert = CheckerFactory('cert', 'opm.cert.CertificateChecker')
 

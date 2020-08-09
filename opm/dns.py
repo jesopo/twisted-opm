@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, with_statement, division
 from ipaddress  import ip_address
+import re
 
 from twisted.internet import defer
 from twisted.internet.abstract import isIPAddress
@@ -12,6 +13,29 @@ from twisted.internet.error import DNSLookupError
 from twisted.names.error import DNSNameError
 
 from . import util
+
+class rDNSChecker(object):
+
+    def __init__(self, bad, msg):
+        self.bad = [(re.compile(k, re.I), v) for k, v in bad.items()]
+        self.msg = msg
+
+    @defer.inlineCallbacks
+    def check(self, scan, env):
+        query = ip_address(scan.ip).reverse_pointer
+        try:
+            result, _, _ = yield env.resolver.lookupPointer(query)
+        except (DNSLookupError, DNSNameError):
+            # XXX is this the right set of exceptions?
+            defer.returnValue(None)
+        else:
+            # domain names should always be ascii, yeah?
+            result = result[0].payload.name.name.decode("ascii")
+            for pattern, description in self.bad:
+                if pattern.fullmatch(result):
+                    reason = self.msg.format(desc=description)
+                    defer.returnValue(reason)
+                    break
 
 class DNSBLChecker(object):
 
