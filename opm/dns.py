@@ -57,7 +57,7 @@ class DNSBLChecker(object):
         if address_obj.version == 6:
             address = reversed(address_obj.exploded.replace(":", ""))
         else:
-            address = reversed(address.split("."))
+            address = reversed(address_obj.exploded.split("."))
 
         query = '.'.join(list(address) + [self.dnsbl])
 
