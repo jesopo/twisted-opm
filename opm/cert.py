@@ -70,7 +70,10 @@ class CertificateChecker(object):
                                bindAddress=bindAddress)
 
         def gotDescription(description):
-            return self.msg.format(desc=description)
+            if description is not None:
+                return self.msg.format(desc=description)
+            else:
+                return None
         def connected(proto):
             return proto.deferred.addCallback(gotDescription)
         def connectFailed(fail):
