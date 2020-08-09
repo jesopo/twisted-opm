@@ -7,7 +7,6 @@
 from ..plugin import CheckerFactory
 
 
-tor = CheckerFactory('tor', 'opm.dns.TorChecker')
 dnsbl = CheckerFactory('dnsbl', 'opm.dns.DNSBLChecker')
 
 cert = CheckerFactory('cert', 'opm.cert.CertificateChecker')
