@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, with_statement, division
 from ipaddress  import ip_address
+import re
 
 from twisted.internet import defer
 from twisted.internet.abstract import isIPAddress
@@ -13,36 +14,28 @@ from twisted.names.error import DNSNameError
 
 from . import util
 
+class rDNSChecker(object):
 
-class TorChecker(object):
-
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        self._query = None
-        if isIPAddress(host):
-            self._setIP(host)
-
-    def _setIP(self, ip):
-        self._query = '.%s.%s.ip-port.exitlist.torproject.org' % (
-            self.port, '.'.join(reversed(ip.split('.'))))
+    def __init__(self, bad, msg):
+        self.bad = [(re.compile(k, re.I), v) for k, v in bad.items()]
+        self.msg = msg
 
     @defer.inlineCallbacks
     def check(self, scan, env):
-        if self._query is None:
-            ip = yield util.getV4HostByName(env.resolver, self.host)
-            self._setIP(ip)
-
-        query = '.'.join(reversed(scan.ip.split('.'))) + self._query
+        query = ip_address(scan.ip).reverse_pointer
         try:
-            yield env.resolver.getHostByName(query)
+            result, _, _ = yield env.resolver.lookupPointer(query)
         except (DNSLookupError, DNSNameError):
             # XXX is this the right set of exceptions?
             defer.returnValue(None)
         else:
-            defer.returnValue('tor exit node (%s:%s)' %
-                              (self.host, self.port))
-
+            # domain names should always be ascii, yeah?
+            result = result[0].payload.name.name.decode("ascii")
+            for pattern, description in self.bad:
+                if pattern.fullmatch(result):
+                    reason = self.msg.format(desc=description)
+                    defer.returnValue(reason)
+                    break
 
 class DNSBLChecker(object):
 
