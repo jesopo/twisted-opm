@@ -1,3 +1,4 @@
+import re
 from twisted.internet import defer, error, protocol, ssl, interfaces
 from zope.interface   import directlyProvides
 
@@ -28,21 +29,30 @@ class CertificateProtocol(protocol.Protocol):
             if 'organizationName' in subject:
                 values.append(('son', subject['organizationName']))
 
-        for k, v in values:
-            key = f'{k}:{v.lower()}'
-            if key in self.bad:
-                d = self.deferred
-                self.deferred = None
-                d.callback(self.bad[key])
-                break
+            for i in range(cert.original.get_extension_count()):
+                ext = cert.original.get_extension(i)
+                if ext.get_short_name() == b"subjectAltName":
+                    sans = str(ext).split(", ")
+                    sans = [s.split(":", 1)[1] for s in sans]
+                    for san in sans:
+                        values.append(("san", san))
+
+        for pattern, description in self.bad:
+            for k, v in values:
+                key = f'{k}:{v.lower()}'
+                if pattern.fullmatch(key):
+                    d = self.deferred
+                    self.deferred = None
+                    d.callback(description)
+                    break
 
         self.transport.loseConnection()
 
 class CertificateChecker(object):
     def __init__(self, port, bad, message):
         self.port = port
-        # .lower() keys here because we do the same to keys we scan out
-        self.bad  = {k.lower(): v for v, k in bad.items()}
+        # convert {k:v} to [(regex(k), v)]
+        self.bad  = [(re.compile(k, re.I), v) for k, v in bad.items()]
         self.msg  = message
 
     def check(self, scan, env):
