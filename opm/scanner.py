@@ -110,7 +110,8 @@ class Scan(object):
                 self._setResult(result)
 
                 # Stop all other checks:
-                running = self.running.values()
+                # (list(...) because it'll change size during iteration)
+                running = list(self.running.values())
                 for d in running:
                     d.cancel()
                 assert not self.running
