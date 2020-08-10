@@ -110,42 +110,46 @@ class Client(irc.IRCClient):
         if self.factory.connregex is None:
             return
 
-        match = self.factory.connregex.match(message)
+        match = self.factory.connregex.search(message)
         if match is None:
             return
 
         d = match.groupdict()
 
-        masks = set()
-        if 'ip' in d:
-            # Sanity check to weed out non-ips without needing to do
-            # it in the regexp (assuming these are something we cannot
-            # scan).
-            if not isIPAddress(d['ip']) and not isIPv6Address(d['ip']):
-                return
-            masks.add('%s!%s@%s' % (d['nick'], d['user'], d['ip']))
-        if 'host' in d:
-            masks.add('%s!%s@%s' % (d['nick'], d['user'], d['host']))
-        masks = list(masks)
+        nick = d['nick']
+        user = d['user']
+        ip =   d['ip']
+
+        if not isIPAddress(d['ip']) and not isIPv6Address(d['ip']):
+            return
+        hostmask = f'{nick}!{user}@{ip}'
 
         scansets = set()
         for mask, pattern, sets in self.factory.masks:
-            for hostmask in masks:
-                if pattern.match(hostmask) is not None:
-                    scansets.update(sets)
+            if pattern.match(hostmask) is not None:
+                scansets.update(sets)
 
-        log.msg('Scanning %r on scanners %s' % (masks, ' '.join(scansets)))
-        result = yield self.factory.scanner.scan(ip=d.get('ip'),
-                                                 host=d.get('host'),
-                                                 scansets=scansets)
+        log.msg(f'Scanning {hostmask} on scanners {" ".join(scansets)}')
+        result = yield self.factory.scanner.scan(ip, scansets)
+
         if result is not None:
-            d['reason'] = result
+            scanset, result = result
+            formats = {
+                'NICK': nick,
+                'USER': user,
+                'IP':   ip,
+                'MASK': hostmask,
+                'DESC': result
+            }
+            formats['UREAS'] = scanset.user_reason.format(**formats)
+            formats['OREAS'] = scanset.oper_reason.format(**formats)
+
             if self.factory.klinetemplate is not None:
-                self.sendLine(self.factory.klinetemplate % d)
-            self.msg(
-                self.factory.channel, 'BAD: %s!%s@%s (%s)' % (
-                    d['nick'], d['user'], d.get('host', d['ip']), result))
-            log.msg('KILL %r for %s' % (masks, result))
+                self.sendLine(self.factory.klinetemplate.format(**formats))
+
+            log_msg = 'BAD {MASK} ({OREAS})'.format(**formats)
+            self.msg(self.factory.channel, log_msg)
+            log.msg('KILL {MASK} for {OREAS}'.format(**formats))
         else:
             log.msg('GOOD %r' % (masks,))
 

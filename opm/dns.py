@@ -16,9 +16,8 @@ from . import util
 
 class rDNSChecker(object):
 
-    def __init__(self, bad, msg):
+    def __init__(self, bad):
         self.bad = [(re.compile(k, re.I), v) for k, v in bad.items()]
-        self.msg = msg
 
     @defer.inlineCallbacks
     def check(self, scan, env):
@@ -33,8 +32,7 @@ class rDNSChecker(object):
             result = result[0].payload.name.name.decode("ascii")
             for pattern, description in self.bad:
                 if pattern.fullmatch(result):
-                    reason = self.msg.format(desc=description)
-                    defer.returnValue(reason)
+                    defer.returnValue(description)
                     break
 
 class DNSBLChecker(object):

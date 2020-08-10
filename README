@@ -9,9 +9,8 @@ compare to (say) BOPM, and how it performs.
 
 Dependencies:
 
-- Python 2.5 or newer
-- Twisted 10.1 (!) or newer
-- pyyaml
+- Python 3.5 or newer
+- pypi packages in requirements.txt
 
 TODO:
 

@@ -87,27 +87,27 @@ class Scan(object):
         for d in waiting:
             d.callback(result)
 
-    def addCheck(self, check, pool, timeout, *args):
+    def addCheck(self, check, pool, scanset, *args):
         if self.finished:
             return
 
-        if (check, timeout) in self.checks:
+        if (check, scanset.timeout) in self.checks:
             return
 
-        self.checks.add((check, timeout))
+        self.checks.add((check, scanset.timeout))
 
         d = pool.run(check, self, *args)
-        self.running[(check, timeout)] = d
+        self.running[(check, scanset.timeout)] = d
 
         @d.addBoth
         def killRunning(result):
-            del self.running[(check, timeout)]
+            del self.running[(check, scanset.timeout)]
             return result
 
         def checked(result):
             if result is not None:
                 # We found something:
-                self._setResult(result)
+                self._setResult((scanset, result))
 
                 # Stop all other checks:
                 # (list(...) because it'll change size during iteration)
@@ -136,7 +136,7 @@ class Scan(object):
 
         # We do not bother cancelling these timeouts: cancelling an
         # already cancelled deferred is a noop.
-        self.clock.callLater(timeout, d.cancel)
+        self.clock.callLater(scanset.timeout, d.cancel)
 
     def start(self):
         self.started = True
@@ -144,6 +144,12 @@ class Scan(object):
             # All our checks finished synchronously. We're done.
             self._setResult(None)
 
+class ScanSet(object):
+    def __init__(self, timeout, scans, user_reason, oper_reason):
+        self.timeout = timeout
+        self.scans   = scans
+        self.user_reason = user_reason
+        self.oper_reason = oper_reason
 
 class ScanEnvironment(object):
 
@@ -165,7 +171,7 @@ class Scanner(object):
         """"Initialize.
 
         pools is a mapping pool name -> size
-        scansets is a mapping name -> [(timeout, poolname, check)]
+        scansets is a mapping scanset name -> ScanSet object
         """
         self.reactor = reactor
         self.resolver = resolver
@@ -181,26 +187,18 @@ class Scanner(object):
         self.scansets = scansets
 
     @defer.inlineCallbacks
-    def scan(self, ip=None, host=None, scansets=(), errhandler=None):
-        """Get a Scan object for an ip or host."""
-        if ip is None and host is None:
-            raise TypeError('ip and host cannot both be None')
+    def scan(self, ip, scanset_names=(), errhandler=None):
+        """Get a Scan object for an ip."""
 
         scans = set()
-        for scanset in scansets:
+        for scanset_name in scanset_names:
             try:
-                scans.update(self.scansets[scanset])
+                scans.add(self.scansets[scanset_name])
             except KeyError:
-                raise UnknownScanset(scanset)
+                raise UnknownScanset(scanset_name)
 
         if not scans:
             defer.returnValue(None)
-
-        if ip is None:
-            ip = yield self.dnspool.run(
-                util.getV4HostByName, self.resolver, host)
-            if ip is None:
-                raise DNSNameError()
 
         if ip not in self.scans:
             log.msg('starting scan for %s' % (ip,))
@@ -219,8 +217,9 @@ class Scanner(object):
             if errhandler is not None:
                 scan.errhandlers.append(errhandler)
 
-        for timeout, poolname, check in scans:
-            scan.addCheck(check, self.pools[poolname], timeout, self.env)
+        for scanset in scans:
+            for poolname, check in scanset.scans:
+                scan.addCheck(check, self.pools[poolname], scanset, self.env)
 
         scan.start()
 
