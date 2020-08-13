@@ -139,16 +139,15 @@ class Client(irc.IRCClient):
                 'USER': user,
                 'IP':   ip,
                 'MASK': hostmask,
-                'DESC': result
+                'DESC': result,
+                'CHAN': self.factory.channel
             }
             formats['UREAS'] = scanset.user_reason.format(**formats)
             formats['OREAS'] = scanset.oper_reason.format(**formats)
 
-            if self.factory.klinetemplate is not None:
-                self.sendLine(self.factory.klinetemplate.format(**formats))
+            for action in self.factory.actions:
+                self.sendLine(action.format(**formats))
 
-            log_msg = 'BAD {MASK} ({OREAS})'.format(**formats)
-            self.msg(self.factory.channel, log_msg)
             log.msg('KILL {MASK} for {OREAS}'.format(**formats))
         else:
             log.msg('GOOD %r' % (masks,))
@@ -228,7 +227,7 @@ class Factory(protocol.ReconnectingClientFactory):
     # XXX did I mention this is ad-hoc and terrible yet?
     def __init__(self, nickname, channel, scanner, masks,
                  password=None, opername=None, operpass=None, away=None,
-                 opermode=None, connregex=None, klinetemplate=None,
+                 opermode=None, connregex=None, actions=None,
                  onconnectmsgs=(), verbose=False, flood_exempt=False,
                  username=None):
         self.bot = None
@@ -245,7 +244,7 @@ class Factory(protocol.ReconnectingClientFactory):
         self.masks = [
             (mask, re.compile(fnmatch.translate(mask)), scansets)
             for mask, scansets in masks.items()]
-        self.klinetemplate = klinetemplate
+        self.actions = actions
         self.onconnectmsgs = onconnectmsgs
         self.verbose = verbose
         self.flood_exempt = flood_exempt
