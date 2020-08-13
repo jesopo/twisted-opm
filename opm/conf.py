@@ -119,7 +119,7 @@ def makeService(options):
             connregex=net.get('connregex'),
             scanner=theScanner,
             masks=options['conf'].get('masks', {}),
-            klinetemplate=net.get('klinetemplate'),
+            actions=net.get('actions'),
             onconnectmsgs=net.get('onconnectmsgs', ()),
             verbose=options['irc-log'],
             flood_exempt=net.get('flood_exempt', False),
