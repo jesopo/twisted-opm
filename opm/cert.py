@@ -49,11 +49,10 @@ class CertificateProtocol(protocol.Protocol):
         self.transport.loseConnection()
 
 class CertificateChecker(object):
-    def __init__(self, port, bad, message):
+    def __init__(self, port, bad):
         self.port = port
         # convert {k:v} to [(regex(k), v)]
         self.bad  = [(re.compile(k, re.I), v) for k, v in bad.items()]
-        self.msg  = message
 
     def check(self, scan, env):
         options = ssl.CertificateOptions(verify=False)
@@ -69,13 +68,8 @@ class CertificateChecker(object):
         d = creator.connectSSL(scan.ip, self.port, options, timeout=None,
                                bindAddress=bindAddress)
 
-        def gotDescription(description):
-            if description is not None:
-                return self.msg.format(desc=description)
-            else:
-                return None
         def connected(proto):
-            return proto.deferred.addCallback(gotDescription)
+            return proto.deferred
         def connectFailed(fail):
             # If we could not connect for some sane reason it's just
             # not a proxy. Let unknown errors propagate though.
