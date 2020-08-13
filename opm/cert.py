@@ -43,7 +43,7 @@ class CertificateProtocol(protocol.Protocol):
                 if pattern.fullmatch(key):
                     d = self.deferred
                     self.deferred = None
-                    d.callback(description)
+                    d.callback(f"{description} ({key})")
                     break
 
         self.transport.loseConnection()
