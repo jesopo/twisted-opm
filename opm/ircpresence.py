@@ -18,12 +18,15 @@ from twisted.internet.abstract import isIPAddress, isIPv6Address
 from twisted.words.protocols import irc
 from twisted.names.error import DNSNameError
 
+from ircchallenge import Challenge
+
 from . import scanner
 
 
 class Client(irc.IRCClient):
 
     clock = None
+    challenge = None
 
     messagePenalty = 2 # seconds
     messageBurst = 10 # seconds
@@ -75,13 +78,31 @@ class Client(irc.IRCClient):
     def signedOn(self):
         for target, msg in self.factory.onconnectmsgs:
             self.msg(target, msg)
-        if self.factory.opername and self.factory.operpass:
-            self.oper(self.factory.opername, self.factory.operpass)
+
+        if self.factory.opername:
+            if self.factory.operkey:
+                self.challenge = Challenge(keyfile=self.factory.operkey,
+                    password=self.factory.operpass)
+                self.sendLine(f'CHALLENGE {self.factory.opername}')
+            elif self.factory.operpass:
+                self.oper(self.factory.opername, self.factory.operpass)
+
         if self.factory.away:
             self.away(self.factory.away)
         self.join(self.factory.channel)
         self.factory.bot = self
         self.factory.resetDelay()
+
+    def irc_740(self, prefix, params):
+        # RPL_RSACHALLENGE2
+        if self.challenge is not None:
+            self.challenge.push(params[1])
+    def irc_741(self, prefix, params):
+        # RPL_ENDOFRSACHALLENGE2
+        if self.challenge is not None:
+            retort = self.challenge.finalise()
+            self.challenge = None
+            self.sendLine(f'CHALLENGE +{retort}')
 
     def irc_RPL_YOUREOPER(self, prefix, params):
         # nick, message = params
@@ -226,8 +247,8 @@ class Factory(protocol.ReconnectingClientFactory):
 
     # XXX did I mention this is ad-hoc and terrible yet?
     def __init__(self, nickname, channel, scanner, masks,
-                 password=None, opername=None, operpass=None, away=None,
-                 opermode=None, connregex=None, actions=None,
+                 password=None, opername=None, operpass=None, operkey=None,
+                 away=None, opermode=None, connregex=None, actions=None,
                  onconnectmsgs=(), verbose=False, flood_exempt=False,
                  username=None):
         self.bot = None
@@ -237,6 +258,7 @@ class Factory(protocol.ReconnectingClientFactory):
         self.password = password
         self.opername = opername
         self.operpass = operpass
+        self.operkey  = operkey
         self.away = away
         self.opermode = opermode
         self.connregex = re.compile(connregex) if connregex else None
