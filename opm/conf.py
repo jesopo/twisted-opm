@@ -114,6 +114,7 @@ def makeService(options):
             password=net.get('pass'),
             opername=net.get('opername', net['nick']),
             operpass=net.get('operpass'),
+            operkey =net.get('operkey'),
             opermode=net.get('opermode'),
             away=net.get('away'),
             connregex=net.get('connregex'),
