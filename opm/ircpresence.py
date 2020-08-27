@@ -52,6 +52,14 @@ class Client(irc.IRCClient):
         if not self._queueEmptying:
             self._sendLines()
 
+    def dataReceived(self, data):
+        if isinstance(data, bytes):
+            try:
+                data = data.decode("utf8")
+            except UnicodeDecodeError:
+                data = data.decode("latin-1")
+        super().dataReceived(data)
+
     def lineReceived(self, line):
         if self.factory.verbose:
             log.msg('IRC IN  %r' % (line,))
