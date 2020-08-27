@@ -171,7 +171,7 @@ class Client(irc.IRCClient):
 
             log.msg('KILL {MASK} for {OREAS}'.format(**formats))
         else:
-            log.msg('GOOD %r' % (masks,))
+            log.msg(f'GOOD {hostmask}')
 
     def privmsg(self, user, channel, message):
         # We use access to our channel as access control.
