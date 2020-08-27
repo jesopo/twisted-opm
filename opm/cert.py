@@ -2,6 +2,13 @@ import re
 from twisted.internet import defer, error, protocol, ssl, interfaces
 from zope.interface   import directlyProvides
 
+CERT_KEYS = [
+    ("CN", "cn"),
+    ("O",  "on")
+]
+
+def _byte_dict(items):
+    return {k.decode("utf8"): v.decode("utf8") for k, v in items}
 
 class CertificateProtocol(protocol.Protocol):
     def __init__(self, bad):
@@ -23,14 +30,18 @@ class CertificateProtocol(protocol.Protocol):
         cert    = ssl.Certificate(self.transport.getPeerCertificate())
 
         if cert is not None:
-            subject = {k: v.decode('utf8') for k, v in cert.getSubject().items()}
-            if 'commonName' in subject:
-                values.append(('scn', subject['commonName']))
-            if 'organizationName' in subject:
-                values.append(('son', subject['organizationName']))
+            cert    = cert.original
+            subject = _byte_dict(cert.get_subject().get_components())
+            issuer  = _byte_dict(cert.get_issuer().get_components())
 
-            for i in range(cert.original.get_extension_count()):
-                ext = cert.original.get_extension(i)
+            for cert_key, match_key in CERT_KEYS:
+                if cert_key in subject:
+                    values.append((f's{match_key}', subject[cert_key]))
+                if cert_key in issuer:
+                    values.append((f'i{match_key}', issuer[cert_key]))
+
+            for i in range(cert.get_extension_count()):
+                ext = cert.get_extension(i)
                 if ext.get_short_name() == b"subjectAltName":
                     sans = str(ext).split(", ")
                     sans = [s.split(":", 1)[1] for s in sans]
