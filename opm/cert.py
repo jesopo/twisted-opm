@@ -43,10 +43,9 @@ class CertificateProtocol(protocol.Protocol):
             for i in range(cert.get_extension_count()):
                 ext = cert.get_extension(i)
                 if ext.get_short_name() == b"subjectAltName":
-                    sans = str(ext).split(", ")
-                    sans = [s.split(":", 1)[1] for s in sans]
+                    sans = ext.get_data()[4:].split(b"\x82\x18")
                     for san in sans:
-                        values.append(("san", san))
+                        values.append(("san", san.decode("ascii")))
 
         for pattern, description in self.bad:
             for k, v in values:
