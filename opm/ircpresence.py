@@ -21,7 +21,7 @@ from twisted.names.error import DNSNameError
 from ircchallenge import Challenge
 
 from . import scanner
-
+from . import cache
 
 class Client(irc.IRCClient):
 
@@ -42,6 +42,8 @@ class Client(irc.IRCClient):
             from twisted.internet import reactor
             self.clock = reactor
         self.messageTimer = 0
+        self.ip_cache = cache.Cache(self.factory.ip_cache)
+
         irc.IRCClient.connectionMade(self)
 
     def sendLine(self, line):
@@ -148,18 +150,24 @@ class Client(irc.IRCClient):
         nick = d['nick']
         user = d['user']
         ip =   d['ip']
+        host = d.get("host", None)
 
         if not isIPAddress(d['ip']) and not isIPv6Address(d['ip']):
             return
-        hostmask = f'{nick}!{user}@{ip}'
+        hostmask = f'{nick}!{user}@{host or ip}'
 
         scansets = set()
         for mask, pattern, sets in self.factory.masks:
             if pattern.match(hostmask) is not None:
                 scansets.update(sets)
 
-        log.msg(f'Scanning {hostmask} on scanners {" ".join(scansets)}')
-        result = yield self.factory.scanner.scan(ip, scansets)
+        if ip in self.ip_cache:
+            result = self.ip_cache.get(ip)
+            log.msg(f'Cache hit for {hostmask}: {result}')
+        else:
+            log.msg(f'Scanning {hostmask} on scanners {" ".join(scansets)}')
+            result = yield self.factory.scanner.scan(ip, scansets)
+            self.ip_cache.set(ip, result)
 
         if result is not None:
             scanset, result = result
@@ -258,7 +266,7 @@ class Factory(protocol.ReconnectingClientFactory):
                  password=None, opername=None, operpass=None, operkey=None,
                  away=None, opermode=None, connregex=None, actions=None,
                  onconnectmsgs=(), verbose=False, flood_exempt=False,
-                 username=None):
+                 username=None, ip_cache=None):
         self.bot = None
         self.nickname = nickname
         self.username = username
@@ -278,3 +286,4 @@ class Factory(protocol.ReconnectingClientFactory):
         self.onconnectmsgs = onconnectmsgs
         self.verbose = verbose
         self.flood_exempt = flood_exempt
+        self.ip_cache = ip_cache
