@@ -195,9 +195,8 @@ class Client(irc.IRCClient):
         if channel != self.factory.channel:
             return
 
-        if not message.startswith(
-            tuple(self.nickname + suffix
-                  for suffix in (' ', ': ', ', ', '; '))):
+        prefixes = [f"{self.nickname}{p}" for p in (' ', ': ', ', ', '; ')]
+        if not any(message.startswith(p) for p in prefixes):
             return
 
         prefix, sep, message = message.partition(' ')
@@ -223,14 +222,10 @@ class Client(irc.IRCClient):
         def errhandler(fail):
             self.msg(channel, 'failure: %s' % (fail.getErrorMessage(),))
 
-        kwargs = dict(scansets=args, errhandler=errhandler)
-        if isIPAddress(target):
-            kwargs['ip'] = target
-        else:
-            kwargs['host'] = target
-
         try:
-            result = yield self.factory.scanner.scan(**kwargs)
+            result = yield self.factory.scanner.scan(
+                target, scanset_names=args, errhandler=errhandler
+            )
         except scanner.UnknownScanset as e:
             self.msg(channel, 'unknown scanset %s' % (e.args[0],))
         except DNSNameError:

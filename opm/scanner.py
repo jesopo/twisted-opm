@@ -187,7 +187,7 @@ class Scanner(object):
         self.scansets = scansets
 
     @defer.inlineCallbacks
-    def scan(self, ip, scanset_names=(), errhandler=None):
+    def scan(self, ip, scanset_names=[], errhandler=None):
         """Get a Scan object for an ip."""
 
         scans = set()
