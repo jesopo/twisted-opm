@@ -2,13 +2,17 @@ import re
 from twisted.internet import defer, error, protocol, ssl, interfaces
 from zope.interface   import directlyProvides
 
+from cryptography import x509
+from cryptography.x509.oid import ExtensionOID, NameOID
+from cryptography.hazmat.backends import default_backend
+
 CERT_KEYS = [
-    ("CN", "cn"),
-    ("O",  "on")
+    ("cn", NameOID.COMMON_NAME),
+    ("on", NameOID.ORGANIZATION_NAME)
 ]
 
-def _byte_dict(items):
-    return {k.decode("utf8"): v.decode("utf8") for k, v in items}
+def _cert_dict(items):
+    return {i.oid: i.value for i in items}
 
 class CertificateProtocol(protocol.Protocol):
     def __init__(self, bad):
@@ -30,26 +34,26 @@ class CertificateProtocol(protocol.Protocol):
         cert    = ssl.Certificate(self.transport.getPeerCertificate())
 
         if cert is not None:
-            cert    = cert.original
-            subject = _byte_dict(cert.get_subject().get_components())
-            issuer  = _byte_dict(cert.get_issuer().get_components())
+            cert       = x509.load_pem_x509_certificate(
+                cert.dumpPEM(), default_backend()
+            )
+            subject    = _cert_dict(list(cert.subject))
+            issuer     = _cert_dict(list(cert.issuer))
+            extensions = _cert_dict(list(cert.extensions))
 
-            for cert_key, match_key in CERT_KEYS:
-                if cert_key in subject:
-                    values.append((f's{match_key}', subject[cert_key]))
-                if cert_key in issuer:
-                    values.append((f'i{match_key}', issuer[cert_key]))
+            for match_key, oid in CERT_KEYS:
+                if oid in subject:
+                    values.append((f's{match_key}', subject[oid]))
+                if oid in issuer:
+                    values.append((f'i{match_key}', issuer[oid]))
 
-            for i in range(cert.get_extension_count()):
-                ext = cert.get_extension(i)
-                if ext.get_short_name() == b"subjectAltName":
-                    sans = ext.get_data()[4:].split(b"\x82\x18")
-                    for san in sans:
-                        values.append(("san", san.decode('latin-1')))
+            sans = extensions.get(ExtensionOID.SUBJECT_ALTERNATIVE_NAME, [])
+            for san in sans:
+                values.append(("san", san.value))
 
         for pattern, description in self.bad:
             for k, v in values:
-                key = f'{k}:{v.lower()}'
+                key = f'{k}:{v}'
                 if pattern.fullmatch(key):
                     d = self.deferred
                     self.deferred = None
