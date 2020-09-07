@@ -2,9 +2,10 @@ import re
 from twisted.internet import defer, error, protocol, ssl, interfaces
 from zope.interface   import directlyProvides
 
-from cryptography import x509
+from cryptography          import x509
 from cryptography.x509.oid import ExtensionOID, NameOID
-from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.backends   import default_backend
+from cryptography.hazmat.primitives import hashes
 
 CERT_KEYS = [
     ("cn", NameOID.COMMON_NAME),
@@ -37,6 +38,8 @@ class CertificateProtocol(protocol.Protocol):
             cert       = x509.load_pem_x509_certificate(
                 cert.dumpPEM(), default_backend()
             )
+            values.append(("sha1", cert.fingerprint(hashes.SHA1()).hex()))
+
             subject    = _cert_dict(list(cert.subject))
             issuer     = _cert_dict(list(cert.issuer))
             extensions = _cert_dict(list(cert.extensions))
