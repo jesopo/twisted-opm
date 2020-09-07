@@ -11,6 +11,7 @@ dnsbl = CheckerFactory('dnsbl', 'opm.dns.DNSBLChecker')
 dns = CheckerFactory('rdns', 'opm.dns.rDNSChecker')
 
 cert = CheckerFactory('cert', 'opm.cert.CertificateChecker')
+http_headers = CheckerFactory('http-headers', 'opm.http.HeaderChecker')
 
 http_connect = CheckerFactory('http', 'opm.proxy.HTTPConnectChecker')
 http_post = CheckerFactory('http-post', 'opm.proxy.HTTPPostChecker')
