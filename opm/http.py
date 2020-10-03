@@ -10,7 +10,7 @@ class HeaderProtocol(basic.LineOnlyReceiver):
 
     def connectionMade(self):
         self.deferred = defer.Deferred(self.cancel)
-        self.transport.write(b"HEAD / HTTP/1.1\r\nHost: test\r\n\r\n")
+        self.transport.write(b"GET / HTTP/1.1\r\nHost: test\r\n\r\n")
     def cancel(self, defer):
         if defer is self.deferred:
             self.deferred = None
