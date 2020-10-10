@@ -21,8 +21,8 @@ class HeaderProtocol(basic.LineOnlyReceiver):
 
     def lineReceived(self, line):
         line = line.decode("utf8").strip("\r")
-        if (not line or           # two consecutive newlines
-                len(lines) > 20): # too many lines
+        if (not line or             # two consecutive newlines
+            len(self._lines) > 20): # too many lines
             self.transport.loseConnection()
         else:
             self._lines.add(line)
