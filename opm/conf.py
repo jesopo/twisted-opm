@@ -125,7 +125,8 @@ def makeService(options):
             verbose=options['irc-log'],
             flood_exempt=net.get('flood_exempt', False),
             username=net.get('username'),
-            ip_cache=net.get('ip-cache', 100)
+            cache_time=net.get("scan-cache-time", 120),
+            cache_size=net.get("scan-cache-size", 1_000_000)
             )
         if net.get('ssl', False):
             ctxf = ssl.ClientContextFactory()
