@@ -1,23 +1,36 @@
 from collections import OrderedDict
-from typing      import Optional
+from time        import monotonic
+from typing      import Optional, Tuple
 
 class Cache(object):
-    def __init__(self, max: int=100):
-        self._max = max
-        self._dict: OrderedDict[str, str] = OrderedDict()
+    def __init__(self, cache_length: int):
+        self._cache_length = cache_length
+        self._dict: OrderedDict[str, Tuple[str, float]] = OrderedDict()
 
     def __contains__(self, key: str) -> bool:
-        return key in self._dict
+        if key in self._dict:
+            value, expire = self._dict[key]
+            return expire > monotonic()
+        else:
+            return False
 
     def get(self, key: str) -> Optional[str]:
         if key in self._dict:
-            self._dict.move_to_end(key)
-            return self._dict[key]
-        else:
-            return None
+            value, expire = self._dict[key]
+            return value
+
+        return None
 
     def set(self, key: str, value: str):
-        self._dict[key] = value
-        self._dict.move_to_end(key)
-        if len(self._dict) > self._max:
-            self._dict.popitem(last=False)
+        now = monotonic()
+
+        # prune expired entries
+        # items are stored newest, ..., oldest so iter backwards
+        for key, (value, time) in reversed(list(self._dict.items())):
+            if time < now:
+                del self._dict[key]
+            else:
+                break
+
+        expire = now + self._cache_length
+        self._dict[key] = (value, expire)
