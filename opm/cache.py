@@ -3,8 +3,11 @@ from time        import monotonic
 from typing      import Optional, Tuple
 
 class Cache(object):
-    def __init__(self, cache_length: int):
-        self._cache_length = cache_length
+    def __init__(self,
+            cache_time: int,
+            cache_size: int):
+        self._cache_time = cache_time
+        self._cache_size = cache_size
         self._dict: OrderedDict[str, Tuple[str, float]] = OrderedDict()
 
     def __contains__(self, key: str) -> bool:
@@ -32,5 +35,9 @@ class Cache(object):
             else:
                 break
 
-        expire = now + self._cache_length
+        # if we've hit the max, pop the oldest
+        if len(self._dict) == self._cache_size:
+            self._dict.popitem(last=True)
+
+        expire = now + self._cache_time
         self._dict[key] = (value, expire)

@@ -42,7 +42,8 @@ class Client(irc.IRCClient):
             from twisted.internet import reactor
             self.clock = reactor
         self.messageTimer = 0
-        self.ip_cache = cache.Cache(self.factory.ip_cache)
+        self.ip_cache = cache.Cache(self.factory.cache_time,
+                                    self.factory.cache_size)
 
         irc.IRCClient.connectionMade(self)
 
@@ -261,7 +262,7 @@ class Factory(protocol.ReconnectingClientFactory):
                  password=None, opername=None, operpass=None, operkey=None,
                  away=None, opermode=None, connregex=None, actions=None,
                  onconnectmsgs=(), verbose=False, flood_exempt=False,
-                 username=None, ip_cache=None):
+                 username=None, cache_time=None, cache_size=None):
         self.bot = None
         self.nickname = nickname
         self.username = username
@@ -281,4 +282,5 @@ class Factory(protocol.ReconnectingClientFactory):
         self.onconnectmsgs = onconnectmsgs
         self.verbose = verbose
         self.flood_exempt = flood_exempt
-        self.ip_cache = ip_cache
+        self.cache_time = cache_time
+        self.cache_size = cache_size
