@@ -196,11 +196,13 @@ class Client(irc.IRCClient):
         if channel != self.factory.channel:
             return
 
-        prefixes = [f"{self.nickname}{p}" for p in (' ', ': ', ', ', '; ')]
-        if not any(message.startswith(p) for p in prefixes):
+                                                  # "" not '' for syntax nano
+                                                  # syntax highlighting
+        prefixes = [f"{self.nickname}{p}" for p in ("", ':', ',', ';')]
+        prefix, sep, message = message.partition(' ')
+        if not prefix in prefixes:
             return
 
-        prefix, sep, message = message.partition(' ')
         args = message.split()
         if not args:
             return
