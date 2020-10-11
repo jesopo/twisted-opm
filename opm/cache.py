@@ -16,6 +16,12 @@ class Cache(object):
             return expire > monotonic()
         else:
             return False
+    def __delitem__(self, key: str):
+        del self._dict[key]
+    def __bool__(self):
+        return bool(self._dict)
+    def clear(self):
+        self._dict.clear()
 
     def get(self, key: str) -> Optional[str]:
         if key in self._dict:

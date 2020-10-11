@@ -254,6 +254,20 @@ class Client(irc.IRCClient):
     def cmd_help(self, channel, args):
         self.msg(channel, 'commands: check stats help')
 
+    def cmd_decache(self, channel, args):
+        if args:
+            ip = args[0]
+            if ip in self.ip_cache:
+                del self.ip_cache[ip]
+                self.msg(channel, 'removed %s from cache' % (ip,))
+            else:
+                self.msg(channel, '%s not in cache' % (ip,))
+        else:
+            if self.ip_cache:
+                self.ip_cache.clear()
+                self.msg(channel, 'cleared cache')
+            else:
+                self.msg(channel, 'cache is empty')
 
 class Factory(protocol.ReconnectingClientFactory):
 
