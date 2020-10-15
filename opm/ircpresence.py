@@ -199,6 +199,7 @@ class Client(irc.IRCClient):
                                                   # "" not '' for syntax nano
                                                   # syntax highlighting
         prefixes = [f"{self.nickname}{p}" for p in ("", ':', ',', ';')]
+        prefixes.append("!topm")
         prefix, sep, message = message.partition(' ')
         if not prefix in prefixes:
             return
