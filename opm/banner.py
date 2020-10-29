@@ -1,4 +1,4 @@
-from twisted.internet  import defer, error, protocol, interfaces
+from twisted.internet  import defer, error, protocol, interfaces, ssl
 from twisted.protocols import basic
 
 class BannerProtocol(basic.LineOnlyReceiver):
@@ -37,6 +37,7 @@ class BannerProtocol(basic.LineOnlyReceiver):
                     self.transport.loseConnection()
 
 class BannerChecker(object):
+    tls = False
     def __init__(self, port, bad, send=""):
         self.port = port
 
@@ -52,10 +53,16 @@ class BannerChecker(object):
             bindAddress = (env.bind_address, 0)
         else:
             bindAddress = None
+
         # Disable the timeout here because our calling scanner should
-        # cancel us just fine without it:
-        d = creator.connectTCP(scan.ip, self.port, timeout=None,
-                               bindAddress=bindAddress)
+        # cancel us just fine without it
+        if self.tls:
+            opt = ssl.CertificateOptions(verify=False)
+            d = creator.connectSSL(scan.ip, self.port, opt, timeout=None,
+                                   bindAddress=bindAddress)
+        else:
+            d = creator.connectTCP(scan.ip, self.port, timeout=None,
+                                   bindAddress=bindAddress)
 
         def connected(proto):
             return proto.deferred
@@ -66,3 +73,6 @@ class BannerChecker(object):
         d.addCallbacks(connected, connectFailed)
 
         return d
+
+class TLSBannerChecker(BannerChecker):
+    tls = True

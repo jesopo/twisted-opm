@@ -12,6 +12,7 @@ dns = CheckerFactory('rdns', 'opm.dns.rDNSChecker')
 
 cert = CheckerFactory('cert', 'opm.cert.CertificateChecker')
 tcp_banner = CheckerFactory('tcp-banner', 'opm.banner.BannerChecker')
+tls_banner = CheckerFactory('tls-banner', 'opm.banner.TLSBannerChecker')
 
 http_connect = CheckerFactory('http', 'opm.proxy.HTTPConnectChecker')
 http_post = CheckerFactory('http-post', 'opm.proxy.HTTPPostChecker')
