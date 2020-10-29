@@ -236,7 +236,8 @@ class Client(irc.IRCClient):
             if result is None:
                 self.msg(channel, '%s is clean' % (target,))
             else:
-                self.msg(channel, '%s is bad: %s' % (target, result))
+                scanset, output = result
+                self.msg(channel, '%s is bad: %s' % (target, output))
 
     def cmd_stats(self, channel, args):
         for name, semaphore in sorted(
