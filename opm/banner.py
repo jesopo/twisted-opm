@@ -5,9 +5,10 @@ class BannerProtocol(basic.LineOnlyReceiver):
     delimeter = b"\n"
 
     def __init__(self, bad, send):
+        self.send   = send
+        self.bad    = bad
         self._lines = set([])
-        self.send = send
-        self.bad  = bad
+        self._buf   = b""
 
     def connectionMade(self):
         self.deferred = defer.Deferred(self.cancel)
@@ -18,23 +19,39 @@ class BannerProtocol(basic.LineOnlyReceiver):
             self.deferred = None
             self.transport.loseConnection()
     def connectionLost(self, reason):
+        if self._buf:
+            # treat everything after the last newline as it's own line
+            # this is important for things that never send a newline
+            self._lines.add(self._buf.decode("utf8"))
+            if self._lines:
+                self._check()
+
         if self.deferred is not None:
             self.deferred.callback(None)
 
+    def dataReceived(self, data):
+        self._buf += data
+        super().dataReceived(data)
+
     def lineReceived(self, line):
-        line = line.decode("utf8").strip("\r")
-        if (not line or             # two consecutive newlines
-            len(self._lines) > 20): # too many lines
+        # cut a single line off the start of _buf
+        self._buf = self._buf.split(b"\n", 1)[1]
+        line      = line.decode("utf8").strip("\r")
+
+        if (not line or                 # two consecutive newlines
+                len(self._lines) > 20): # too many lines
             self.transport.loseConnection()
         else:
             self._lines.add(line)
+            self._check()
 
-            for key, bad_lines in self.bad.items():
-                if (self._lines&bad_lines) == bad_lines:
-                    d = self.deferred
-                    self.deferred = None
-                    d.callback(f"TCP banner ({key})")
-                    self.transport.loseConnection()
+    def _check(self):
+        for key, bad_lines in self.bad.items():
+            if (self._lines&bad_lines) == bad_lines:
+                d = self.deferred
+                self.deferred = None
+                d.callback(f"TCP banner ({key})")
+                self.transport.loseConnection()
 
 class BannerChecker(object):
     tls = False
