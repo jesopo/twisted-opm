@@ -4,9 +4,7 @@ from typing      import Optional, Tuple
 
 class Cache(object):
     def __init__(self,
-            cache_time: int,
             cache_size: int):
-        self._cache_time = cache_time
         self._cache_size = cache_size
         self._dict: OrderedDict[str, Tuple[str, float]] = OrderedDict()
 
@@ -30,7 +28,10 @@ class Cache(object):
 
         return None
 
-    def set(self, key: str, value: str):
+    def set(self,
+            key:   str,
+            value: str,
+            time:  int):
         now = monotonic()
 
         # prune expired entries
@@ -45,5 +46,5 @@ class Cache(object):
         if len(self._dict) == self._cache_size:
             self._dict.popitem(last=True)
 
-        expire = now + self._cache_time
+        expire = now + time
         self._dict[key] = (value, expire)

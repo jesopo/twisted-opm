@@ -42,8 +42,9 @@ class Client(irc.IRCClient):
             from twisted.internet import reactor
             self.clock = reactor
         self.messageTimer = 0
-        self.ip_cache = cache.Cache(self.factory.cache_time,
-                                    self.factory.cache_size)
+
+        self.ip_cache     = cache.Cache(self.factory.cache_size)
+        self.immune_cache = cache.Cache(1<<8) # larger than we should hit
 
         irc.IRCClient.connectionMade(self)
 
@@ -162,13 +163,16 @@ class Client(irc.IRCClient):
             if pattern.match(hostmask) is not None:
                 scansets.update(sets)
 
-        if ip in self.ip_cache:
+        if ip in self.immune_cache:
+            log.msg(f'Immunity given to {hostmask} (for IP {ip})')
+            result = None
+        elif ip in self.ip_cache:
             result = self.ip_cache.get(ip)
             log.msg(f'Cache hit for {hostmask}: {result}')
         else:
             log.msg(f'Scanning {hostmask} on scanners {" ".join(scansets)}')
             result = yield self.factory.scanner.scan(ip, scansets)
-            self.ip_cache.set(ip, result)
+            self.ip_cache.set(ip, result, self.factory.cache_time)
 
         if result is not None:
             scanset, result = result
@@ -268,6 +272,14 @@ class Client(irc.IRCClient):
                 self.msg(channel, 'cleared cache')
             else:
                 self.msg(channel, 'cache is empty')
+
+    def cmd_immune(self, channel, args):
+        if len(args) > 1 and args[1].isdigit():
+            ip, seconds, *_ = args
+            self.immune_cache.set(ip, True, int(seconds))
+            self.msg(channel, f'{ip} immune for {seconds} seconds')
+        else:
+            self.msg(channel, 'invalid arguments (immune <seconds> <ip>)')
 
 class Factory(protocol.ReconnectingClientFactory):
 
