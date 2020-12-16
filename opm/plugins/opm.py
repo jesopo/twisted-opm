@@ -14,6 +14,9 @@ cert = CheckerFactory('cert', 'opm.cert.CertificateChecker')
 tcp_banner = CheckerFactory('tcp-banner', 'opm.banner.BannerChecker')
 tls_banner = CheckerFactory('tls-banner', 'opm.banner.TLSBannerChecker')
 
+http_body  = CheckerFactory('http-body',  'opm.http.HTTPBodyChecker')
+https_body = CheckerFactory('https-body', 'opm.http.HTTPSBodyChecker')
+
 http_connect = CheckerFactory('http', 'opm.proxy.HTTPConnectChecker')
 http_post = CheckerFactory('http-post', 'opm.proxy.HTTPPostChecker')
 http_get = CheckerFactory('http-get', 'opm.proxy.HTTPGetChecker')

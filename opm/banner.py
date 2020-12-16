@@ -2,7 +2,7 @@ from twisted.internet  import defer, error, protocol, interfaces, ssl
 from twisted.protocols import basic
 
 class BannerProtocol(basic.LineOnlyReceiver):
-    delimeter = b"\n"
+    delimiter = b"\n"
 
     def __init__(self, bad, send):
         self.send   = send
