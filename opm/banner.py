@@ -16,18 +16,14 @@ class BannerProtocol(basic.LineOnlyReceiver):
             self.transport.write(self.send.encode("utf8"))
     def cancel(self, defer):
         if defer is self.deferred:
+            self._check_leftover()
             self.deferred = None
             self.transport.loseConnection()
     def connectionLost(self, reason):
-        if self._buf:
-            # treat everything after the last newline as it's own line
-            # this is important for things that never send a newline
-            self._lines.add(self._buf.decode("utf8"))
-            if self._lines:
-                self._check()
-
         if self.deferred is not None:
-            self.deferred.callback(None)
+            if not self._check_leftover():
+                self.deferred.callback(None)
+            self.deferred = None
 
     def dataReceived(self, data):
         self._buf += data
@@ -41,17 +37,28 @@ class BannerProtocol(basic.LineOnlyReceiver):
         if (not line or                 # two consecutive newlines
                 len(self._lines) > 20): # too many lines
             self.transport.loseConnection()
-        else:
+        elif self.deferred is not None:
             self._lines.add(line)
-            self._check()
+            if self._check():
+                self.deferred = None
+                self.transport.loseConnection()
 
+    def _check_leftover(self):
+        if self._buf:
+            # treat everything after the last newline as it's own line
+            # this is important for things that never send a newline
+            self._lines.add(self._buf.decode("utf8", "ignore"))
+            self._buf = b""
+            return self._check()
+        else:
+            return False
     def _check(self):
         for key, bad_lines in self.bad.items():
             if (self._lines&bad_lines) == bad_lines:
-                d = self.deferred
-                self.deferred = None
-                d.callback(f"TCP banner ({key})")
-                self.transport.loseConnection()
+                self.deferred.callback(f"TCP banner ({key})")
+                return True
+        else:
+            return False
 
 class BannerChecker(object):
     tls = False
