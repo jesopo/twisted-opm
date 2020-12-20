@@ -42,7 +42,8 @@ class HTTPProtocol(protocol.Protocol):
             while (len(self._head) <= 20 and # no more than 20 headers
                     data.find(b"\n") > -1):  # do we still have newlines?
 
-                line, data = data.replace(b"\r", b'').split(b"\n", 1)
+                line, data = data.split(b"\n", 1)
+                line = line.replace(b"\r", b"")
 
                 if not line:
                     self._body = True
