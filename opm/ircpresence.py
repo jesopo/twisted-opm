@@ -18,7 +18,11 @@ from twisted.internet.abstract import isIPAddress, isIPv6Address
 from twisted.words.protocols import irc
 from twisted.names.error import DNSNameError
 
-from ircchallenge import Challenge
+try:
+    from ircchallenge import Challenge
+    has_challenge = True
+except ModuleNotFoundError:
+    has_challenge = False
 
 from . import scanner
 from . import cache
@@ -93,9 +97,13 @@ class Client(irc.IRCClient):
 
         if self.factory.opername:
             if self.factory.operkey:
-                self.challenge = Challenge(keyfile=self.factory.operkey,
-                    password=self.factory.operpass)
-                self.sendLine(f'CHALLENGE {self.factory.opername}')
+                if has_challenge:
+                    self.challenge = Challenge(keyfile=self.factory.operkey,
+                        password=self.factory.operpass)
+                    self.sendLine(f'CHALLENGE {self.factory.opername}')
+                else:
+                    log.err("challenge configured but support not available")
+
             elif self.factory.operpass:
                 self.oper(self.factory.opername, self.factory.operpass)
 
