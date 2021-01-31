@@ -82,7 +82,7 @@ class LineProtocol(basic.LineOnlyReceiver):
         # faster if it takes them a while to get to the EOL, and is
         # critical if they never actually send an EOL.
         if self._buffer:
-            self.check(self._buffer)
+            self.check(self._buffer.decode("utf8", "ignore"))
             # ... but don't count this against our bytesReceived
             # count, because we will check it again later. Note that
             # LineOnlyReceiver already rejects overly long lines, so
