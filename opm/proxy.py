@@ -124,7 +124,7 @@ class HTTPConnectProtocol(LineProtocol):
         ])
 
     def lineReceived(self, line):
-        HTTPConnectProtocol.lineReceived(self, line)
+        LineProtocol.lineReceived(self, line)
         # Mikrotik needs us to send *something* in a separate packet to the
         # initial CONNECT otherwise it will not forward us data.
         # b"\r\n" works for this purpose - we'll wait until after 2 lines
