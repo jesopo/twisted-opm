@@ -35,8 +35,8 @@ class Cache(object):
         now = monotonic()
 
         # prune expired entries
-        # items are stored newest, ..., oldest so iter backwards
-        for key, (value, time) in reversed(list(self._dict.items())):
+        # items are stored oldest, ..., newest
+        for key, (value, time) in list(self._dict.items()):
             if time < now:
                 del self._dict[key]
             else:
@@ -44,7 +44,8 @@ class Cache(object):
 
         # if we've hit the max, pop the oldest
         if len(self._dict) == self._cache_size:
-            self._dict.popitem(last=True)
+            self._dict.popitem(last=False)
 
         expire = now + time
         self._dict[key] = (value, expire)
+        self._dict.move_to_end(key, last=True)
