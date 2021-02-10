@@ -14,7 +14,6 @@ import fnmatch
 
 from twisted.python import log
 from twisted.internet import protocol, defer
-from twisted.internet.abstract import isIPAddress, isIPv6Address
 from twisted.words.protocols import irc
 from twisted.names.error import DNSNameError
 
@@ -160,25 +159,27 @@ class Client(irc.IRCClient):
         nick = d['nick']
         user = d['user']
         ip =   d['ip']
-        host = d.get("host", None)
+        host = d.get("host", ip)
 
-        if not isIPAddress(d['ip']) and not isIPv6Address(d['ip']):
+        if ip == '0':
+            # cliconn for a remote iline spoofed user
             return
-        hostmask = f'{nick}!{user}@{host or ip}'
+        ip_hostmask = f'{nick}!{user}@{ip}'
+        ux_hostmask = f'{nick}!{user}@{host}'
 
         scansets = set()
         for mask, pattern, sets in self.factory.masks:
-            if pattern.match(hostmask) is not None:
+            if pattern.match(ip_hostmask) is not None:
                 scansets.update(sets)
 
         if ip in self.immune_cache:
-            log.msg(f'Immunity given to {hostmask} (for IP {ip})')
+            log.msg(f'Immunity given to {ux_hostmask}|{ip}')
             result = None
         elif ip in self.ip_cache:
             result = self.ip_cache.get(ip)
-            log.msg(f'Cache hit for {hostmask}: {result}')
+            log.msg(f'Cache hit for {ux_hostmask}|{ip}: {result}')
         else:
-            log.msg(f'Scanning {hostmask} on scanners {" ".join(scansets)}')
+            log.msg(f'Scanning {ux_hostmask}|{ip} on scanners {" ".join(scansets)}')
             result = yield self.factory.scanner.scan(ip, scansets)
             self.ip_cache.set(ip, result, self.factory.cache_time)
 
@@ -188,7 +189,8 @@ class Client(irc.IRCClient):
                 'NICK': nick,
                 'USER': user,
                 'IP':   ip,
-                'MASK': hostmask,
+                'HOST': host,
+                'MASK': ux_hostmask,
                 'DESC': result,
                 'CHAN': self.factory.channel
             }
