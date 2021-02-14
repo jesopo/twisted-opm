@@ -289,7 +289,7 @@ class Client(irc.IRCClient):
             self.immune_cache.set(ip, True, int(seconds))
             self.msg(channel, f'{ip} immune for {seconds} seconds')
         else:
-            self.msg(channel, 'invalid arguments (immune <seconds> <ip>)')
+            self.msg(channel, 'invalid arguments (immune <ip> <seconds>)')
 
 class Factory(protocol.ReconnectingClientFactory):
 
