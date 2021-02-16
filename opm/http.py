@@ -4,13 +4,21 @@ from twisted.protocols import basic
 
 HTTP_GET = "GET / HTTP/1.0\r\n\r\n"
 
-class HTTPBodyProtocol(protocol.Protocol):
+STABLE_HEADERS = set([
+    b"content-type",
+    b"cache-control",
+    b"referrer-policy",
+    b"connection",
+    b"server"
+])
+
+class HTTPProtocol(protocol.Protocol):
     def __init__(self, bad, send):
         self.send  = send
         self.bad   = bad
 
         self._buff = b""
-        self._head = 0
+        self._head = []
         self._body = False
         self._clen = -1
 
@@ -31,24 +39,31 @@ class HTTPBodyProtocol(protocol.Protocol):
         data = self._buff + data
 
         if not self._body:
-            while (self._head <= 20 and     # no more than 20 headers
-                    data.find(b"\n") > -1): # do we still have newlines?
+            while (len(self._head) <= 20 and # no more than 20 headers
+                    data.find(b"\n") > -1):  # do we still have newlines?
 
-                self._head += 1
                 line, data = data.split(b"\n", 1)
-                line = line.strip(b"\r").lower()
+                line = line.replace(b"\r", b"")
 
                 if not line:
                     self._body = True
                     break
-                elif line.startswith(b"content-length: "):
-                    _, clen = line.split(b": ", 1)
-                    try:
-                        self._clen = int(clen)
-                    except ValueError:
-                        # well thats not a number is it
-                        self.transport.loseConnection()
-                        return
+                elif not self._head:
+                    # probably "HTTP/1.1 200 OK" or so
+                    self._head.append((None, line))
+                elif b": " in line:
+                    # we've got a key:value header
+                    key, value = line.split(b": ", 1)
+                    key = key.lower()
+                    self._head.append((key, value))
+
+                    if key == b"content-length":
+                        try:
+                            self._clen = int(value)
+                        except ValueError:
+                            # well thats not a number is it
+                            self.transport.loseConnection()
+                            return
 
         self._buff = data
 
@@ -56,20 +71,38 @@ class HTTPBodyProtocol(protocol.Protocol):
                 self.deferred is not None and   # not matched yet
                 len(self._buff) >= self._clen): # we've got enough body
 
-            body = self._buff[:self._clen]
-            hash = hashlib.sha1(body).hexdigest()
-            self._check(hash)
-
+            if not self._check():
+                self.deferred.callback(None)
+            self.deferred = None
             self.transport.loseConnection()
 
-    def _check(self, hash):
-        if hash in self.bad:
-            description = self.bad[hash]
-            d = self.deferred
-            d.callback(f"{description} ({hash})")
-            self.deferred = None
+    def _check(self):
+        head = b""
+        for key, value in self._head:
+            if key is None:
+                # probably "HTTP/1.1 200 OK" or so
+                head += b"%b\r\n" % value
+            elif key in STABLE_HEADERS:
+                # key:value header
+                head += b"%b: %b\r\n" % (key, value)
 
-class HTTPBodyChecker(object):
+        body = self._buff[:self._clen]
+        hashes = set([
+            hashlib.sha1(body).hexdigest(),
+            hashlib.sha1(head).hexdigest(),
+            hashlib.sha1(b"%b\r\n%b" % (head, body)).hexdigest()
+        ])
+
+        match = hashes&set(self.bad.keys())
+        if match:
+            hash = list(match)[0]
+            description = self.bad[hash]
+            self.deferred.callback(f"{description} ({hash})")
+            return True
+        else:
+            return False
+
+class HTTPChecker(object):
     tls = False
     def __init__(self, port, bad, send=HTTP_GET):
         self.port = port
@@ -80,7 +113,7 @@ class HTTPBodyChecker(object):
         self.bad  = bad
 
     def check(self, scan, env):
-        creator = protocol.ClientCreator(env.reactor, HTTPBodyProtocol,
+        creator = protocol.ClientCreator(env.reactor, HTTPProtocol,
                                          self.bad, self.send)
         if env.bind_address:
             bindAddress = (env.bind_address, 0)
@@ -107,5 +140,5 @@ class HTTPBodyChecker(object):
 
         return d
 
-class HTTPSBodyChecker(HTTPBodyChecker):
+class HTTPSChecker(HTTPChecker):
     tls = True
