@@ -186,18 +186,16 @@ class Client(irc.IRCClient):
         if result is not None:
             scanset, result = result
             formats = {
+                'IP': ip,
                 'NICK': nick,
                 'USER': user,
-                'IP':   ip,
                 'HOST': host,
                 'MASK': ux_hostmask,
-                'DESC': result,
-                'CHAN': self.factory.channel
+                'CHAN': self.factory.channel,
+                'REASON': result,
             }
-            formats['UREAS'] = scanset.user_reason.format(**formats)
-            formats['OREAS'] = scanset.oper_reason.format(**formats)
 
-            for action in self.factory.actions:
+            for action in scanset.actions:
                 self.sendLine(action.format(**formats))
 
             log.msg('KILL {MASK} for {OREAS}'.format(**formats))

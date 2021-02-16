@@ -2,6 +2,9 @@
 
 from distutils.core import setup
 
+with open("requirements.txt", "r") as requirements_file:
+    install_requires = requirements_file.read().splitlines()
+
 setup(
     name="twisted-opm",
     version="0.1",
@@ -12,11 +15,5 @@ setup(
     license="MIT",
     packages=["opm", "opm/plugins", "twisted/plugins"],
     python_requires=">=3.5",
-    install_requires=[
-        'cryptography>=3.1',
-        'ircchallenge==0.1.1',
-        'pyyaml      >=5.3.1',
-        'Twisted     >=20.3.0',
-        'pyOpenSSL   >=20.0.1',
-    ]
+    install_requires=install_requires
 )

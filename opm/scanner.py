@@ -145,11 +145,10 @@ class Scan(object):
             self._setResult(None)
 
 class ScanSet(object):
-    def __init__(self, timeout, scans, user_reason, oper_reason):
+    def __init__(self, timeout, scans, actions):
         self.timeout = timeout
         self.scans   = scans
-        self.user_reason = user_reason
-        self.oper_reason = oper_reason
+        self.actions = actions
 
 class ScanEnvironment(object):
 
