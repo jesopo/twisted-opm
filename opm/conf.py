@@ -79,9 +79,6 @@ def makeService(options):
 
     checkerFactories = plugin.getCheckerFactories()
 
-    default_user_reason = options['conf'].get('user-reason', '')
-    default_oper_reason = options['conf'].get('oper-reason', '')
-
     scansets = {}
     for name, d in options['conf']['scansets'].items():
         scans = []
@@ -91,10 +88,8 @@ def makeService(options):
             checker = checkerFactories[checkername](*args)
             scans.append((poolname, checker.check))
 
-        user_reason = d.get('user-reason', default_user_reason)
-        oper_reason = d.get('oper-reason', default_oper_reason)
-        scansets[name] = scanner.ScanSet(d['timeout'], scans, user_reason,
-                                         oper_reason)
+        actions = d.get('actions', [])
+        scansets[name] = scanner.ScanSet(d['timeout'], scans, actions)
 
     # XXXX the target_blah passing here is horrible, but I intend to
     # make this less global in the future anyway, so laaaaaaaaater
