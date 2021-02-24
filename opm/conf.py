@@ -16,9 +16,14 @@ from twisted.python import usage
 from twisted.application import service, internet
 from twisted.internet import ssl
 
-import yaml
+import base64, yaml
 
 from . import ircpresence, scanner, plugin
+
+def badbinary_constructor(loader, node):
+    value = loader.construct_scalar(node)
+    return base64.b64decode(value)
+yaml.SafeLoader.add_constructor("!binary", badbinary_constructor)
 
 # XXX string/unicode handling in this code is sloppy.
 # Should work as long as the config file is all ascii.
