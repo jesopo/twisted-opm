@@ -198,7 +198,7 @@ class Client(irc.IRCClient):
             for action in scanset.actions:
                 self.sendLine(action.format(**formats))
 
-            log.msg('KILL {MASK} for {OREAS}'.format(**formats))
+            log.msg(f'KILL {ux_hostmask} for {result}')
         else:
             log.msg(f'GOOD {hostmask}')
 
