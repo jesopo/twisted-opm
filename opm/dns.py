@@ -46,7 +46,7 @@ class DNSBLChecker(object):
             nameserver, _, nsport = nameserver.partition(":")
             self.resolver = createResolver([(nameserver, int(nsport or "53"))])
         else:
-            self.resolver = env.resolver
+            self.resolver = None
 
     @defer.inlineCallbacks
     def check(self, scan, env):
@@ -59,8 +59,9 @@ class DNSBLChecker(object):
 
         query = '.'.join(list(address) + [self.dnsbl])
 
+        resolver = (self.resolver or env.resolver)
         try:
-            result = yield util.getV4HostByName(self.resolver, query)
+            result = yield util.getV4HostByName(resolver, query)
         except DNSNameError:
             # XXX util.getV4HostByName should probably catch this instead.
             result = None
