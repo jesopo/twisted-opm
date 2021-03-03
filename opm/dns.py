@@ -11,6 +11,7 @@ from twisted.internet import defer
 from twisted.internet.abstract import isIPAddress
 from twisted.internet.error import DNSLookupError
 from twisted.names.error import DNSNameError
+from twisted.names.client import createResolver
 
 from . import util
 
@@ -37,9 +38,15 @@ class rDNSChecker(object):
 
 class DNSBLChecker(object):
 
-    def __init__(self, dnsbl, reasons):
+    def __init__(self, dnsbl, reasons, nameserver=None):
         self.dnsbl = dnsbl
         self.reasons = reasons
+
+        if nameserver is not None:
+            nameserver, _, nsport = nameserver.partition(":")
+            self.nameserver = (nameserver, int(nsport or "53"))
+        else:
+            self.nameserver = None
 
     @defer.inlineCallbacks
     def check(self, scan, env):
@@ -52,8 +59,9 @@ class DNSBLChecker(object):
 
         query = '.'.join(list(address) + [self.dnsbl])
 
+        resolver = createResolver([self.nameserver])
         try:
-            result = yield util.getV4HostByName(env.resolver, query)
+            result = yield util.getV4HostByName(resolver, query)
         except DNSNameError:
             # XXX util.getV4HostByName should probably catch this instead.
             result = None
