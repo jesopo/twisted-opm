@@ -9,7 +9,7 @@ This is all pretty ad-hoc and terrible.
 
 from __future__ import absolute_import, with_statement, division
 
-import re
+import random, re
 import fnmatch
 
 from twisted.python import log
