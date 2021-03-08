@@ -193,6 +193,7 @@ class Client(irc.IRCClient):
                 'MASK': ux_hostmask,
                 'CHAN': self.factory.channel,
                 'REASON': result,
+                'RANDOM': random.randint(160, 320)
             }
 
             for action in scanset.actions:
