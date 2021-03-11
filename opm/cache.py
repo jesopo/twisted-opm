@@ -31,13 +31,14 @@ class Cache(object):
     def set(self,
             key:   str,
             value: str,
-            time:  int):
+            life:  int):
+
         now = monotonic()
 
         # prune expired entries
         # items are stored oldest, ..., newest
-        for key, (value, time) in list(self._dict.items()):
-            if time < now:
+        for key, (value, expire) in list(self._dict.items()):
+            if expire < now:
                 del self._dict[key]
             else:
                 break
@@ -46,6 +47,6 @@ class Cache(object):
         if len(self._dict) == self._cache_size:
             self._dict.popitem(last=False)
 
-        expire = now + time
+        expire = now + life
         self._dict[key] = (value, expire)
         self._dict.move_to_end(key, last=True)
