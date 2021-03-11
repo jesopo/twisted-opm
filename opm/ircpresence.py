@@ -9,7 +9,7 @@ This is all pretty ad-hoc and terrible.
 
 from __future__ import absolute_import, with_statement, division
 
-import re
+import random, re
 import fnmatch
 
 from twisted.python import log
@@ -193,6 +193,7 @@ class Client(irc.IRCClient):
                 'MASK': ux_hostmask,
                 'CHAN': self.factory.channel,
                 'REASON': result,
+                'RANDOM': random.randint(160, 320)
             }
 
             for action in scanset.actions:
