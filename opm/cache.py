@@ -37,9 +37,9 @@ class Cache(object):
 
         # prune expired entries
         # items are stored oldest, ..., newest
-        for key, (value, expire) in list(self._dict.items()):
+        for other_key, (value, expire) in list(self._dict.items()):
             if expire < now:
-                del self._dict[key]
+                del self._dict[other_key]
             else:
                 break
 
