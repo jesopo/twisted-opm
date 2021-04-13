@@ -126,7 +126,9 @@ def makeService(options):
             flood_exempt=net.get('flood_exempt', False),
             username=net.get('username'),
             cache_time=net.get("scan-cache-time", 120),
-            cache_size=net.get("scan-cache-size", 1_000_000)
+            cache_size=net.get("scan-cache-size", 1_000_000),
+            sasl_username=net.get("sasl_username", None),
+            sasl_password=net.get("sasl_password", None)
             )
         if net.get('ssl', False):
             ctxf = ssl.ClientContextFactory()

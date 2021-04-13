@@ -12,6 +12,7 @@ from __future__ import absolute_import, with_statement, division
 import random, re
 import fnmatch
 
+from base64 import b64encode
 from twisted.python import log
 from twisted.internet import protocol, defer
 from twisted.words.protocols import irc
@@ -48,8 +49,28 @@ class Client(irc.IRCClient):
 
         self.ip_cache     = cache.Cache(self.factory.cache_size)
         self.immune_cache = cache.Cache(1<<8) # larger than we should hit
-
         irc.IRCClient.connectionMade(self)
+
+    def register(self, nickname, hostname='foo', servername='bar'):
+        self.sendLine("CAP REQ :sasl")
+        super().register(nickname, hostname, servername)
+
+    def irc_CAP(self, prefix, params):
+        if not self.factory.sasl_username or not self.factory.sasl_password:
+            # we don't need sasl so we don't care if the server has it
+            return
+        if params[1] != "ACK" or params[2].split() != ["sasl"]:
+            log.msg("Warning: SASL requested but not available")
+        sasl = b64encode(f"{self.factory.sasl_username}\0{self.factory.sasl_username}\0{self.factory.sasl_password}".encode().strip())
+        self.sendLine("AUTHENTICATE PLAIN")
+        self.sendLine("AUTHENTICATE " + sasl.decode())
+
+    def irc_903(self, prefix, params):
+        self.sendLine("CAP END")
+
+    def irc_904(self, prefix, params):
+        log.msg("Warning: SASL auth failed")
+    irc_905 = irc_904
 
     def sendLine(self, line):
         # Overridden to do rfc1459-style rate limiting.
@@ -299,7 +320,8 @@ class Factory(protocol.ReconnectingClientFactory):
                  password=None, opername=None, operpass=None, operkey=None,
                  away=None, opermode=None, connregex=None, actions=None,
                  onconnectmsgs=(), verbose=False, flood_exempt=False,
-                 username=None, cache_time=None, cache_size=None):
+                 username=None, cache_time=None, cache_size=None,
+                 sasl_username=None, sasl_password=None):
         self.bot = None
         self.nickname = nickname
         self.username = username
@@ -321,3 +343,5 @@ class Factory(protocol.ReconnectingClientFactory):
         self.flood_exempt = flood_exempt
         self.cache_time = cache_time
         self.cache_size = cache_size
+        self.sasl_username = sasl_username
+        self.sasl_password = sasl_password
