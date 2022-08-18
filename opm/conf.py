@@ -129,8 +129,9 @@ def makeService(options):
             cache_size=net.get("scan-cache-size", 1_000_000)
             )
         if net.get('ssl', False):
-            ctxf = ssl.ClientContextFactory()
-            serv = internet.SSLClient(net['host'], net['port'], factory, ctxf)
+            # XXX allow config to define a hostname just for validation purposes
+            ctx = ssl.optionsForClientTLS(net['host'])
+            serv = internet.SSLClient(net['host'], net['port'], factory, ctx)
         else:
             serv = internet.TCPClient(net['host'], net['port'], factory)
         serv.setName(name)
